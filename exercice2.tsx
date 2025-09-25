@@ -381,3 +381,78 @@ const clientWallet: ClientWallet = {
   wallet: aliceWallet,
 };
 console.log(clientWallet);
+console.log("Wallet transactions:", clientWallet.wallet.transactions);
+
+////
+// --- Partie 9 ---
+
+enum ActivityType {
+  RIDE = "ride",
+  PAYMENT = "payment",
+  SUPPORT = "support",
+  WALLET = "wallet"
+}
+
+interface BaseActivity {
+  type: ActivityType;
+  date: string;
+}
+
+interface RideActivity extends BaseActivity {
+  type: ActivityType.RIDE;
+  courseId: number;
+}
+
+interface PaymentActivity extends BaseActivity {
+  type: ActivityType.PAYMENT;
+  paymentId: number;
+  amount: number;
+}
+
+interface SupportActivity extends BaseActivity {
+  type: ActivityType.SUPPORT;
+  ticketId: number;
+  resolved: boolean;
+}
+
+interface WalletActivity extends BaseActivity {
+  type: ActivityType.WALLET;
+  transactionId: number;
+  amount: number;
+}
+
+type Activity = RideActivity | PaymentActivity | SupportActivity | WalletActivity;
+
+interface ClientHistory {
+  clientId: number;
+  history: Activity[];
+}
+
+// --- Tests partie 9 ---
+
+const clientActivities: Activity[] = [
+  {
+    type: ActivityType.RIDE,
+    courseId: 1001,
+    date: "2025-09-20"
+  },
+  {
+    type: ActivityType.PAYMENT,
+    paymentId: 5001,
+    amount: 35.5,
+    date: "2025-09-20"
+  },
+  {
+    type: ActivityType.SUPPORT,
+    ticketId: 9001,
+    resolved: false,
+    date: "2025-09-21"
+  }
+];
+console.log(clientActivities);
+
+const aliceHistory: ClientHistory = {
+  clientId: 101,
+  history: clientActivities
+};
+console.log(aliceHistory);
