@@ -71,6 +71,8 @@ const taxiTrip: Taxi = {
 
 enum PaymentMethod {
   CARD = "card",
+  PAYPAL = "paypal",
+  APPLE_PAY = "apple_pay",
 }
 
 enum PaymentStatus {
@@ -79,8 +81,10 @@ enum PaymentStatus {
 }
 
 interface Card {
-  number: string;
+  number?: string;
+  lastFourDigits?: string;
   expiration: Date;
+  paypalId?: string;
 }
 
 interface Method {
@@ -387,7 +391,7 @@ enum ActivityType {
   RIDE = "ride",
   PAYMENT = "payment",
   SUPPORT = "support",
-  WALLET = "wallet"
+  WALLET = "wallet",
 }
 
 interface BaseActivity {
@@ -418,7 +422,11 @@ interface WalletActivity extends BaseActivity {
   amount: number;
 }
 
-type Activity = RideActivity | PaymentActivity | SupportActivity | WalletActivity;
+type Activity =
+  | RideActivity
+  | PaymentActivity
+  | SupportActivity
+  | WalletActivity;
 
 interface ClientHistory {
   clientId: number;
@@ -431,25 +439,51 @@ const clientActivities: Activity[] = [
   {
     type: ActivityType.RIDE,
     courseId: 1001,
-    date: "2025-09-20"
+    date: "2025-09-20",
   },
   {
     type: ActivityType.PAYMENT,
     paymentId: 5001,
     amount: 35.5,
-    date: "2025-09-20"
+    date: "2025-09-20",
   },
   {
     type: ActivityType.SUPPORT,
     ticketId: 9001,
     resolved: false,
-    date: "2025-09-21"
-  }
+    date: "2025-09-21",
+  },
 ];
 // console.log(clientActivities);
 
 const aliceHistory: ClientHistory = {
   clientId: 101,
-  history: clientActivities
+  history: clientActivities,
 };
 // console.log(aliceHistory);
+
+////
+//Partie 10
+
+//-> modified "enum PayementMethods" from partie 3 by adding Paypal & ApplePay
+//-> modified "interface Card" from partie 3 by adding "paypalId" & "lastFourDigits
+
+// --- Tests partie 10 ---
+
+const paypalMethod: Method = {
+  method: PaymentMethod.PAYPAL,
+};
+
+const paypalCard: Card = {
+  paypalId: "alice.example@paypal.com",
+  expiration: new Date(2099, 11, 31),
+};
+
+const tripWithPayPal: Trip = {
+  id: 3001,
+  taxi: taxiTrip,
+  method: paypalMethod,
+  status: PaymentStatus.PAID,
+  card: paypalCard,
+};
+// console.log(tripWithPayPal);

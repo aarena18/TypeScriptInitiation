@@ -9,7 +9,6 @@ const alice = {
     phone: "0601020304",
     vip: true,
 };
-console.log(alice);
 // --- Tests interface taxi ---
 const driverBob = {
     id: 201,
@@ -29,12 +28,14 @@ const taxiTrip = {
     distanceKm: 20,
     price: 35.5,
 };
-console.log(taxiTrip);
+// console.log(taxiTrip);
 ////
 // --- Partie 3 ---
 var PaymentMethod;
 (function (PaymentMethod) {
     PaymentMethod["CARD"] = "card";
+    PaymentMethod["PAYPAL"] = "paypal";
+    PaymentMethod["APPLE_PAY"] = "apple_pay";
 })(PaymentMethod || (PaymentMethod = {}));
 var PaymentStatus;
 (function (PaymentStatus) {
@@ -46,11 +47,11 @@ const aliceCard = {
     number: "**** **** 1234",
     expiration: new Date(2026, 12),
 };
-console.log(aliceCard);
+// console.log(aliceCard);
 const cardPayment = {
     method: PaymentMethod.CARD,
 };
-console.log(cardPayment);
+// console.log(cardPayment);
 const completeTrip = {
     id: 2001,
     taxi: taxiTrip, //-> trouver comment recuper l'id de taxiTrip (ligne60)
@@ -58,7 +59,7 @@ const completeTrip = {
     status: PaymentStatus.PAID,
     card: aliceCard,
 };
-console.log(completeTrip);
+// console.log(completeTrip);
 ////
 // --- Partie 4 ---
 var Currency;
@@ -73,7 +74,7 @@ const invoiceItems = [
     { label: "Distance (20 km)", amount: 25.0 },
     { label: "Service Fee", amount: 5.5 },
 ];
-console.log(invoiceItems);
+// console.log(invoiceItems);
 const tripInvoice = {
     id: 7001,
     paymentId: 5001,
@@ -82,7 +83,7 @@ const tripInvoice = {
     total: 35.5,
     currency: Currency.EUR,
 };
-console.log(tripInvoice);
+// console.log(tripInvoice);
 ////
 // --- Partie 5 ---
 var LoyaltyTier;
@@ -99,7 +100,7 @@ const loyaltyBenefits = [
     { type: BenefitType.DISCOUNT, value: 10 },
     { type: BenefitType.PRIORITY_SUPPORT },
 ];
-console.log(loyaltyBenefits);
+// console.log(loyaltyBenefits);
 const aliceLoyalty = {
     clientId: 101,
     tier: LoyaltyTier.GOLD,
@@ -107,14 +108,13 @@ const aliceLoyalty = {
     benefits: loyaltyBenefits,
     validUntil: "2026-01-01",
 };
-console.log(aliceLoyalty);
 // --- Tests partie 6 ---
 const routeStops = [
     { location: "Paris", eta: "2025-09-24T08:00:00Z" },
     { location: "La Défense", eta: "2025-09-24T08:20:00Z" },
     { location: "Versailles", eta: "2025-09-24T09:00:00Z" },
 ];
-console.log(routeStops);
+// console.log(routeStops);
 const sharedRideRoute = {
     stops: routeStops,
 };
@@ -122,7 +122,7 @@ const passengers = [
     { id: "101", name: "Alice", pickup: "Paris" },
     { id: "102", name: "Charlie", pickup: "La Défense" },
 ];
-console.log(passengers);
+// console.log(passengers);
 const sharedRide = {
     id: 1002,
     driver: driverBob,
@@ -130,8 +130,7 @@ const sharedRide = {
     route: sharedRideRoute, //-> à changer pour ne plus avoir [object] mais les stops (ligne 233)
     farePerPassenger: 18.0,
 };
-console.log(sharedRide);
-console.log("Route stops:", sharedRide.route.stops);
+// console.log(sharedRide);
 ////
 // --- Partie 7 ---
 var TicketCategory;
@@ -152,7 +151,7 @@ const supportAgent = {
     id: 301,
     name: "Sophie",
 };
-console.log(supportAgent);
+// console.log(supportAgent);
 const ticketMessages = [
     {
         from: MessageSender.CLIENT,
@@ -166,7 +165,7 @@ const ticketMessages = [
         agent: supportAgent,
     },
 ];
-console.log(ticketMessages);
+// console.log(ticketMessages);
 const supportTicket = {
     id: 9001,
     clientId: 101,
@@ -174,7 +173,7 @@ const supportTicket = {
     messages: ticketMessages,
     status: TicketStatus.OPEN,
 };
-console.log(supportTicket);
+// console.log(supportTicket);
 ////
 // --- Partie 8 ---
 var TransactionType;
@@ -197,19 +196,18 @@ const walletTransactions = [
         date: "2025-09-21",
     },
 ];
-console.log(walletTransactions);
+// console.log(walletTransactions);
 const aliceWallet = {
     balance: 50.0,
     currency: Currency.EUR,
     transactions: walletTransactions, //-> trouver comment recuper inside transactions (ligne357)
 };
-console.log(aliceWallet);
+// console.log(aliceWallet);
 const clientWallet = {
     clientId: 101,
     wallet: aliceWallet,
 };
-console.log(clientWallet);
-console.log("Wallet transactions:", clientWallet.wallet.transactions);
+// console.log(clientWallet);
 ////
 // --- Partie 9 ---
 var ActivityType;
@@ -239,9 +237,29 @@ const clientActivities = [
         date: "2025-09-21"
     }
 ];
-console.log(clientActivities);
+// console.log(clientActivities);
 const aliceHistory = {
     clientId: 101,
     history: clientActivities
 };
-console.log(aliceHistory);
+// console.log(aliceHistory);
+////
+//Partie 10
+//-> modified "enum PayementMethods" from partie 3 by adding Paypal & ApplePay
+//-> modified "interface Card" from partie 3 by adding "paypalId" & "lastFourDigits
+// --- Tests partie 10 ---
+const paypalMethod = {
+    method: PaymentMethod.PAYPAL
+};
+const paypalCard = {
+    paypalId: "alice.example@paypal.com",
+    expiration: new Date(2099, 11, 31), // Placeholder expiration date
+};
+const tripWithPayPal = {
+    id: 3001,
+    taxi: taxiTrip,
+    method: paypalMethod,
+    status: PaymentStatus.PAID,
+    card: paypalCard
+};
+// console.log(tripWithPayPal);
