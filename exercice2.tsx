@@ -255,3 +255,73 @@ const sharedRide: SharedRide = {
   farePerPassenger: 18.0
 };
 console.log(sharedRide);
+
+console.log("Route stops:", sharedRide.route.stops);
+
+////
+// --- Partie 7 ---
+
+enum TicketCategory {
+  PAYMENT = "payment",
+}
+
+enum TicketStatus {
+  OPEN = "open",
+}
+
+enum MessageSender {
+  CLIENT = "client",
+  SUPPORT = "support"
+}
+
+interface Agent {
+  id: number;
+  name: string;
+}
+
+interface Message {
+  from: MessageSender;
+  text: string;
+  sentAt: string;
+  agent?: Agent;
+}
+
+interface SupportTicket {
+  id: number;
+  clientId: number;
+  category: TicketCategory;
+  messages: Message[];
+  status: TicketStatus;
+}
+
+// --- Tests partie 7 ---
+
+const supportAgent: Agent = {
+  id: 301,
+  name: "Sophie"
+};
+console.log(supportAgent);
+
+const ticketMessages: Message[] = [
+  {
+    from: MessageSender.CLIENT,
+    text: "My payment didn't go through yesterday",
+    sentAt: "2025-09-24T09:00:00Z"
+  },
+  {
+    from: MessageSender.SUPPORT,
+    text: "We are checking the issue",
+    sentAt: "2025-09-24T09:05:00Z",
+    agent: supportAgent
+  }
+];
+console.log(ticketMessages);
+
+const supportTicket: SupportTicket = {
+  id: 9001,
+  clientId: 101,
+  category: TicketCategory.PAYMENT, 
+  messages: ticketMessages,
+  status: TicketStatus.OPEN
+};
+console.log(supportTicket);

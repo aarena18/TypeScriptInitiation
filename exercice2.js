@@ -125,10 +125,53 @@ const passengers = [
 console.log(passengers);
 const sharedRide = {
     id: 1002,
-    driver: driverBob, // Reuse driver from part 2
+    driver: driverBob,
     passengers: passengers,
-    route: sharedRideRoute,
+    route: sharedRideRoute, //-> à changer pour ne plus avoir [object] mais les stops (ligne 233)
     farePerPassenger: 18.0
 };
 console.log(sharedRide);
 console.log("Route stops:", sharedRide.route.stops);
+////
+// --- Partie 7 ---
+var TicketCategory;
+(function (TicketCategory) {
+    TicketCategory["PAYMENT"] = "payment";
+})(TicketCategory || (TicketCategory = {}));
+var TicketStatus;
+(function (TicketStatus) {
+    TicketStatus["OPEN"] = "open";
+})(TicketStatus || (TicketStatus = {}));
+var MessageSender;
+(function (MessageSender) {
+    MessageSender["CLIENT"] = "client";
+    MessageSender["SUPPORT"] = "support";
+})(MessageSender || (MessageSender = {}));
+// --- Tests partie 7 ---
+const supportAgent = {
+    id: 301,
+    name: "Sophie"
+};
+console.log(supportAgent);
+const ticketMessages = [
+    {
+        from: MessageSender.CLIENT,
+        text: "My payment didn't go through yesterday",
+        sentAt: "2025-09-24T09:00:00Z"
+    },
+    {
+        from: MessageSender.SUPPORT,
+        text: "We are checking the issue",
+        sentAt: "2025-09-24T09:05:00Z",
+        agent: supportAgent
+    }
+];
+console.log(ticketMessages);
+const supportTicket = {
+    id: 9001,
+    clientId: 101,
+    category: TicketCategory.PAYMENT,
+    messages: ticketMessages, //-> à changer pour ne plus avoir [object] mais les messages (ligne 305)
+    status: TicketStatus.OPEN
+};
+console.log(supportTicket);
