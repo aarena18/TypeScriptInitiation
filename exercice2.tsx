@@ -18,7 +18,7 @@ const alice: UserConfig = {
   name: "Alice",
   email: "alice@example.com",
   phone: "0601020304",
-  vip: true
+  vip: true,
 };
 console.log(alice);
 
@@ -30,8 +30,7 @@ interface User {
   name: string;
 }
 
-interface Driver extends User {
-}
+interface Driver extends User {}
 
 interface Taxi {
   id: number;
@@ -111,12 +110,12 @@ console.log(cardPayment);
 
 const completeTrip: Trip = {
   id: 2001,
-  taxi: taxiTrip,//-> trouver comment recuper l'id de taxiTrip (ligne60)
+  taxi: taxiTrip, //-> trouver comment recuper l'id de taxiTrip (ligne60)
   method: cardPayment,
   status: PaymentStatus.PAID,
   card: aliceCard,
 };
-console.log(completeTrip)
+console.log(completeTrip);
 
 ////
 // --- Partie 4 ---
@@ -124,7 +123,7 @@ console.log(completeTrip)
 enum Currency {
   EUR = "EUR",
   USD = "USD",
-  GBP = "GBP"
+  GBP = "GBP",
 }
 
 interface InvoiceItem {
@@ -146,7 +145,7 @@ interface Invoice {
 const invoiceItems: InvoiceItem[] = [
   { label: "Base Fare", amount: 5.0 },
   { label: "Distance (20 km)", amount: 25.0 },
-  { label: "Service Fee", amount: 5.5 }
+  { label: "Service Fee", amount: 5.5 },
 ];
 console.log(invoiceItems);
 
@@ -156,7 +155,7 @@ const tripInvoice: Invoice = {
   issuedAt: "2025-09-25T08:25:00Z",
   items: invoiceItems,
   total: 35.5,
-  currency: Currency.EUR
+  currency: Currency.EUR,
 };
 console.log(tripInvoice);
 
@@ -174,7 +173,7 @@ enum BenefitType {
 
 interface Benefit {
   type: BenefitType;
-  value?: number; 
+  value?: number;
 }
 
 interface LoyaltyProgram {
@@ -189,7 +188,7 @@ interface LoyaltyProgram {
 
 const loyaltyBenefits: Benefit[] = [
   { type: BenefitType.DISCOUNT, value: 10 },
-  { type: BenefitType.PRIORITY_SUPPORT }
+  { type: BenefitType.PRIORITY_SUPPORT },
 ];
 console.log(loyaltyBenefits);
 
@@ -198,7 +197,7 @@ const aliceLoyalty: LoyaltyProgram = {
   tier: LoyaltyTier.GOLD,
   points: 1200,
   benefits: loyaltyBenefits,
-  validUntil: "2026-01-01"
+  validUntil: "2026-01-01",
 };
 console.log(aliceLoyalty);
 
@@ -233,17 +232,17 @@ interface SharedRide {
 const routeStops: Stop[] = [
   { location: "Paris", eta: "2025-09-24T08:00:00Z" },
   { location: "La Défense", eta: "2025-09-24T08:20:00Z" },
-  { location: "Versailles", eta: "2025-09-24T09:00:00Z" }
+  { location: "Versailles", eta: "2025-09-24T09:00:00Z" },
 ];
 console.log(routeStops);
 
 const sharedRideRoute: Route = {
-  stops: routeStops
+  stops: routeStops,
 };
 
 const passengers: Passenger[] = [
   { id: "101", name: "Alice", pickup: "Paris" },
-  { id: "102", name: "Charlie", pickup: "La Défense" }
+  { id: "102", name: "Charlie", pickup: "La Défense" },
 ];
 console.log(passengers);
 
@@ -251,8 +250,8 @@ const sharedRide: SharedRide = {
   id: 1002,
   driver: driverBob,
   passengers: passengers,
-  route: sharedRideRoute,//-> à changer pour ne plus avoir [object] mais les stops (ligne 233)
-  farePerPassenger: 18.0
+  route: sharedRideRoute, //-> à changer pour ne plus avoir [object] mais les stops (ligne 233)
+  farePerPassenger: 18.0,
 };
 console.log(sharedRide);
 
@@ -271,7 +270,7 @@ enum TicketStatus {
 
 enum MessageSender {
   CLIENT = "client",
-  SUPPORT = "support"
+  SUPPORT = "support",
 }
 
 interface Agent {
@@ -298,7 +297,7 @@ interface SupportTicket {
 
 const supportAgent: Agent = {
   id: 301,
-  name: "Sophie"
+  name: "Sophie",
 };
 console.log(supportAgent);
 
@@ -306,22 +305,79 @@ const ticketMessages: Message[] = [
   {
     from: MessageSender.CLIENT,
     text: "My payment didn't go through yesterday",
-    sentAt: "2025-09-24T09:00:00Z"
+    sentAt: "2025-09-24T09:00:00Z",
   },
   {
     from: MessageSender.SUPPORT,
     text: "We are checking the issue",
     sentAt: "2025-09-24T09:05:00Z",
-    agent: supportAgent
-  }
+    agent: supportAgent,
+  },
 ];
 console.log(ticketMessages);
 
 const supportTicket: SupportTicket = {
   id: 9001,
   clientId: 101,
-  category: TicketCategory.PAYMENT, 
+  category: TicketCategory.PAYMENT,
   messages: ticketMessages,
-  status: TicketStatus.OPEN
+  status: TicketStatus.OPEN,
 };
 console.log(supportTicket);
+
+////
+// --- Partie 8 ---
+
+enum TransactionType {
+  TOPUP = "topup",
+  PAYMENT = "payment",
+}
+
+interface Transaction {
+  id: number;
+  type: TransactionType;
+  amount: number;
+  date: string;
+}
+
+interface Wallet {
+  balance: number;
+  currency: Currency;
+  transactions: Transaction[];
+}
+
+interface ClientWallet {
+  clientId: number;
+  wallet: Wallet;
+}
+
+// --- Tests partie 8 ---
+
+const walletTransactions: Transaction[] = [
+  {
+    id: 6001,
+    type: TransactionType.TOPUP,
+    amount: 20.0,
+    date: "2025-09-20",
+  },
+  {
+    id: 6002,
+    type: TransactionType.PAYMENT,
+    amount: -15.0,
+    date: "2025-09-21",
+  },
+];
+console.log(walletTransactions);
+
+const aliceWallet: Wallet = {
+  balance: 50.0,
+  currency: Currency.EUR,
+  transactions: walletTransactions, //-> trouver comment recuper inside transactions (ligne357)
+};
+console.log(aliceWallet);
+
+const clientWallet: ClientWallet = {
+  clientId: 101,
+  wallet: aliceWallet,
+};
+console.log(clientWallet);

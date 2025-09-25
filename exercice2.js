@@ -171,7 +171,41 @@ const supportTicket = {
     id: 9001,
     clientId: 101,
     category: TicketCategory.PAYMENT,
-    messages: ticketMessages, //-> à changer pour ne plus avoir [object] mais les messages (ligne 305)
+    messages: ticketMessages,
     status: TicketStatus.OPEN
 };
 console.log(supportTicket);
+////
+// --- Partie 8 ---
+var TransactionType;
+(function (TransactionType) {
+    TransactionType["TOPUP"] = "topup";
+    TransactionType["PAYMENT"] = "payment";
+})(TransactionType || (TransactionType = {}));
+// --- Tests partie 8 ---
+const walletTransactions = [
+    {
+        id: 6001,
+        type: TransactionType.TOPUP,
+        amount: 20.0,
+        date: "2025-09-20"
+    },
+    {
+        id: 6002,
+        type: TransactionType.PAYMENT,
+        amount: -15.0,
+        date: "2025-09-21"
+    }
+];
+console.log(walletTransactions);
+const aliceWallet = {
+    balance: 50.0,
+    currency: Currency.EUR,
+    transactions: walletTransactions
+};
+console.log(aliceWallet);
+const clientWallet = {
+    clientId: 101,
+    wallet: aliceWallet
+};
+console.log(clientWallet);
