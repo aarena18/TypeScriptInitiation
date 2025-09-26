@@ -1,0 +1,222 @@
+import {
+  ContractStatus,
+  ClientType,
+  AccidentType,
+  PaymentMethod,
+} from "../types/index.js";
+import { ContactInfo, Contract } from "../models/contract.js";
+import { Client } from "../models/client.js";
+import { Accident, Expert } from "../models/accident.js";
+import { Payment } from "../models/payment.js";
+import { UpdatedContract } from "../models/extended.js";
+import { assignExpertToAccident } from "../utils/assignment.js";
+
+// ---- Tests Partie 2 ----
+
+export function runPartie2Tests(): void {
+  const aliceContact = new ContactInfo("alice@example.com", "0601020304");
+  const bobContact = new ContactInfo("bob@example.com");
+  const alice = new Client(101, aliceContact, ClientType.VIP);
+  const bob = new Client(102, bobContact, ClientType.STANDARD);
+  const aliceContract1 = new Contract(1001, 500, ContractStatus.ACTIVE);
+  const bobContract = new Contract(1003, 300, ContractStatus.ACTIVE);
+
+  alice.addContract(aliceContract1);
+  bob.addContract(bobContract);
+
+  const fireExpert = new Expert(1, "Jean Dupont", AccidentType.FIRE);
+  const theftExpert = new Expert(2, "Marie Martin", AccidentType.THEFT);
+  const waterExpert = new Expert(3, "Pierre Durand", AccidentType.WATER_DAMAGE);
+  const expertsList = [fireExpert, theftExpert, waterExpert];
+
+  const aliceUpdatedContract = new UpdatedContract(
+    aliceContract1.id,
+    aliceContract1.basePrice,
+    aliceContract1.status,
+    aliceContract1.reduction,
+    aliceContract1.bonus
+  );
+
+  const bobUpdatedContract = new UpdatedContract(
+    bobContract.id,
+    bobContract.basePrice,
+    bobContract.status
+  );
+
+  const aliceFireAccident = new Accident(
+    3001,
+    aliceContract1.id,
+    new Date("2025-09-25"),
+    AccidentType.FIRE,
+    "Kitchen fire at Alice's home - burnt pancackes"
+  );
+
+  const aliceTheftAccident = new Accident(
+    3002,
+    aliceContract1.id,
+    new Date("2025-09-26"),
+    AccidentType.THEFT,
+    "Alice's laptop stolen from car"
+  );
+
+  const bobWaterAccident = new Accident(
+    3003,
+    bobContract.id,
+    new Date("2025-09-26"),
+    AccidentType.WATER_DAMAGE,
+    "Bob's apartment - pipe burst in bathroom"
+  );
+
+  const assignedFireExpert = assignExpertToAccident(
+    aliceFireAccident,
+    expertsList
+  );
+  console.log(
+    "Fire accident assigned to expert:",
+    assignedFireExpert?.name,
+    "(ID:",
+    aliceFireAccident.assignedExpertId,
+    ")"
+  );
+  console.log(
+    "Fire expert workload:",
+    fireExpert.name,
+    fireExpert.getWorkload(),
+    "accidents"
+  );
+
+  const assignedTheftExpert = assignExpertToAccident(
+    aliceTheftAccident,
+    expertsList
+  );
+  console.log(
+    "Theft accident assigned to expert:",
+    assignedTheftExpert?.name,
+    "(ID:",
+    aliceTheftAccident.assignedExpertId,
+    ")"
+  );
+  console.log(
+    "Theft expert workload:",
+    theftExpert.name,
+    theftExpert.getWorkload(),
+    "accidents"
+  );
+
+  const assignedWaterExpert = assignExpertToAccident(
+    bobWaterAccident,
+    expertsList
+  );
+  console.log(
+    "Water accident assigned to expert:",
+    assignedWaterExpert?.name,
+    "(ID:",
+    bobWaterAccident.assignedExpertId,
+    ")"
+  );
+  console.log(
+    "Water expert workload:",
+    waterExpert.name,
+    waterExpert.getWorkload(),
+    "accidents"
+  );
+
+  aliceUpdatedContract.addAccident(aliceFireAccident);
+  console.log(
+    "Added fire accident to Alice's contract. Total accidents:",
+    aliceUpdatedContract.getAccidents().length
+  );
+
+  aliceUpdatedContract.addAccident(aliceTheftAccident);
+  console.log(
+    "Added theft accident to Alice's contract. Total accidents:",
+    aliceUpdatedContract.getAccidents().length
+  );
+
+  bobUpdatedContract.addAccident(bobWaterAccident);
+  console.log(
+    "Added water accident to Bob's contract. Total accidents:",
+    bobUpdatedContract.getAccidents().length
+  );
+
+  const alicePayment1 = new Payment(
+    4001,
+    aliceContract1.id,
+    aliceUpdatedContract.calculateFinalPrice(),
+    PaymentMethod.CARD,
+    new Date("2025-09-01")
+  );
+  console.log(
+    "Alice payment 1 created:",
+    alicePayment1.amount,
+    "EUR via",
+    alicePayment1.method
+  );
+
+  const alicePayment2 = new Payment(
+    4002,
+    aliceContract1.id,
+    aliceUpdatedContract.calculateFinalPrice(),
+    PaymentMethod.BANK_TRANSFER,
+    new Date("2025-10-01")
+  );
+  console.log(
+    "Alice payment 2 created:",
+    alicePayment2.amount,
+    "EUR via",
+    alicePayment2.method
+  );
+  console.log("Alice payment 2 can retry:", alicePayment2.canRetry());
+  if (alicePayment2.canRetry()) {
+    alicePayment2.retry();
+    console.log(
+      "Alice payment 2 after retry - ID:",
+      alicePayment2.id,
+      "Status:",
+      alicePayment2.status
+    );
+    console.log("Alice payment 2 retry count:", alicePayment2.getRetryCount());
+  }
+
+  const bobPayment1 = new Payment(
+    4003,
+    bobContract.id,
+    bobUpdatedContract.calculateFinalPrice(),
+    PaymentMethod.CASH,
+    new Date("2025-09-15")
+  );
+  console.log(
+    "Bob payment 1 created:",
+    bobPayment1.amount,
+    "EUR via",
+    bobPayment1.method
+  );
+
+  alicePayment1.complete();
+  console.log("Alice payment 1 completed. Status:", alicePayment1.status);
+
+  alicePayment2.fail();
+  console.log("Alice payment 2 failed. Status:", alicePayment2.status);
+
+  bobPayment1.complete();
+  console.log("Bob payment 1 completed. Status:", bobPayment1.status);
+
+  aliceUpdatedContract.addPayment(alicePayment1);
+  aliceUpdatedContract.addPayment(alicePayment2);
+  console.log(
+    "Alice contract total paid amount:",
+    aliceUpdatedContract.getTotalPaidAmount(),
+    "EUR"
+  );
+  console.log(
+    "Alice contract failed payments:",
+    aliceUpdatedContract.getFailedPayments().length
+  );
+
+  bobUpdatedContract.addPayment(bobPayment1);
+  console.log(
+    "Bob contract total paid amount:",
+    bobUpdatedContract.getTotalPaidAmount(),
+    "EUR"
+  );
+}
