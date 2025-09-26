@@ -16,7 +16,6 @@ export var AccidentType;
     AccidentType["ACCIDENT"] = "accident";
     AccidentType["VANDALISM"] = "vandalism";
 })(AccidentType || (AccidentType = {}));
-// Enums pour les paiements
 export var PaymentMethod;
 (function (PaymentMethod) {
     PaymentMethod["CARD"] = "card";
@@ -54,3 +53,26 @@ export var EntityType;
     EntityType["EXPERT"] = "expert";
     EntityType["OPTION"] = "option";
 })(EntityType || (EntityType = {}));
+export var BeneficiaryRelation;
+(function (BeneficiaryRelation) {
+    BeneficiaryRelation["SPOUSE"] = "spouse";
+    BeneficiaryRelation["CHILD"] = "child";
+    BeneficiaryRelation["PARENT"] = "parent";
+    BeneficiaryRelation["SIBLING"] = "sibling";
+    BeneficiaryRelation["PARTNER_COMPANY"] = "partner_company";
+    BeneficiaryRelation["OTHER"] = "other";
+})(BeneficiaryRelation || (BeneficiaryRelation = {}));
+export var LegalProcedureStatus;
+(function (LegalProcedureStatus) {
+    LegalProcedureStatus["OPEN"] = "open";
+    LegalProcedureStatus["IN_PROGRESS"] = "in_progress";
+    LegalProcedureStatus["SETTLED"] = "settled";
+    LegalProcedureStatus["CANCELLED"] = "cancelled";
+})(LegalProcedureStatus || (LegalProcedureStatus = {}));
+export var LawyerSpecialty;
+(function (LawyerSpecialty) {
+    LawyerSpecialty["INSURANCE_LAW"] = "insurance_law";
+    LawyerSpecialty["CIVIL_LAW"] = "civil_law";
+    LawyerSpecialty["COMMERCIAL_LAW"] = "commercial_law";
+    LawyerSpecialty["CRIMINAL_LAW"] = "criminal_law";
+})(LawyerSpecialty || (LawyerSpecialty = {}));

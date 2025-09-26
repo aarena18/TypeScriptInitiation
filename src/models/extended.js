@@ -1,6 +1,7 @@
-import { PaymentStatus } from '../types/index.js';
+import { PaymentStatus, LegalProcedureStatus } from '../types/index.js';
 import { Contract } from './contract.js';
 import { Client } from './client.js';
+import { ContractBeneficiary } from './beneficiary.js';
 export class UpdatedContract extends Contract {
     constructor() {
         super(...arguments);
@@ -153,5 +154,94 @@ export class EnhancedClient extends Client {
     }
     getTotalMonthlyPremium() {
         return this.getActiveFullContracts().reduce((total, contract) => total + contract.calculateFinalPriceWithOptions(), 0);
+    }
+}
+// Classes étendues pour la Partie 4
+export class AdvancedContract extends FullContract {
+    constructor() {
+        super(...arguments);
+        this.beneficiaries = [];
+        this.legalProcedures = [];
+    }
+    addBeneficiary(beneficiary, sharePercentage) {
+        const contractBeneficiary = new ContractBeneficiary(beneficiary, sharePercentage, this.id);
+        // Vérifier que le total des parts ne dépasse pas 100%
+        const totalShares = this.getTotalBeneficiaryShares() + sharePercentage;
+        if (totalShares > 100) {
+            throw new Error(`Cannot add beneficiary: total shares would exceed 100% (current: ${this.getTotalBeneficiaryShares()}%, trying to add: ${sharePercentage}%)`);
+        }
+        this.beneficiaries.push(contractBeneficiary);
+        return contractBeneficiary;
+    }
+    removeBeneficiary(beneficiaryId) {
+        const index = this.beneficiaries.findIndex(cb => cb.beneficiary.id === beneficiaryId);
+        if (index !== -1) {
+            this.beneficiaries.splice(index, 1);
+            return true;
+        }
+        return false;
+    }
+    getBeneficiaries() {
+        return [...this.beneficiaries];
+    }
+    getTotalBeneficiaryShares() {
+        return this.beneficiaries.reduce((total, cb) => total + cb.sharePercentage, 0);
+    }
+    getBeneficiaryByRelation(relation) {
+        return this.beneficiaries.filter(cb => cb.beneficiary.relation === relation);
+    }
+    addLegalProcedure(procedure) {
+        this.legalProcedures.push(procedure);
+    }
+    getLegalProcedures() {
+        return [...this.legalProcedures];
+    }
+    getOpenLegalProcedures() {
+        return this.legalProcedures.filter(proc => proc.isOpen());
+    }
+    getLegalProceduresByStatus(status) {
+        return this.legalProcedures.filter(proc => proc.status === status);
+    }
+}
+export class ComprehensiveClient extends EnhancedClient {
+    constructor() {
+        super(...arguments);
+        this.advancedContracts = [];
+    }
+    addAdvancedContract(contract) {
+        this.advancedContracts.push(contract);
+        // Also add to parent classes for compatibility
+        super.addFullContract(contract);
+    }
+    getAdvancedContracts() {
+        return [...this.advancedContracts];
+    }
+    getAllBeneficiaries() {
+        const allBeneficiaries = [];
+        this.advancedContracts.forEach(contract => {
+            allBeneficiaries.push(...contract.getBeneficiaries());
+        });
+        return allBeneficiaries;
+    }
+    getBeneficiariesByRelation(relation) {
+        return this.getAllBeneficiaries().filter(cb => cb.beneficiary.relation === relation);
+    }
+    getAllLegalProcedures() {
+        const allProcedures = [];
+        this.advancedContracts.forEach(contract => {
+            allProcedures.push(...contract.getLegalProcedures());
+        });
+        return allProcedures;
+    }
+    getOpenLegalProcedures() {
+        return this.getAllLegalProcedures().filter(proc => proc.isOpen());
+    }
+    getLegalProceduresCount() {
+        const procedures = this.getAllLegalProcedures();
+        return {
+            open: procedures.filter(p => p.status === LegalProcedureStatus.OPEN || p.status === LegalProcedureStatus.IN_PROGRESS).length,
+            settled: procedures.filter(p => p.status === LegalProcedureStatus.SETTLED).length,
+            cancelled: procedures.filter(p => p.status === LegalProcedureStatus.CANCELLED).length,
+        };
     }
 }

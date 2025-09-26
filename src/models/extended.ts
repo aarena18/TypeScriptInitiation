@@ -1,8 +1,17 @@
-import { OptionType, EventAction, EntityType, PaymentStatus } from '../types/index.js';
+import { 
+  OptionType, 
+  EventAction, 
+  EntityType, 
+  PaymentStatus, 
+  BeneficiaryRelation, 
+  LegalProcedureStatus 
+} from '../types/index.js';
 import { Contract } from './contract.js';
 import { Accident } from './accident.js';
 import { Payment } from './payment.js';
 import { Client } from './client.js';
+import { Beneficiary, ContractBeneficiary } from './beneficiary.js';
+import { LegalProcedure } from './legal-procedure.js';
 
 export class UpdatedContract extends Contract {
   private accidents: Accident[] = [];
@@ -216,5 +225,108 @@ export class EnhancedClient extends Client {
       (total, contract) => total + contract.calculateFinalPriceWithOptions(),
       0
     );
+  }
+}
+
+// Classes étendues pour la Partie 4
+export class AdvancedContract extends FullContract {
+  private beneficiaries: ContractBeneficiary[] = [];
+  private legalProcedures: LegalProcedure[] = [];
+
+  addBeneficiary(beneficiary: Beneficiary, sharePercentage: number): ContractBeneficiary {
+    const contractBeneficiary = new ContractBeneficiary(beneficiary, sharePercentage, this.id);
+    
+    // Vérifier que le total des parts ne dépasse pas 100%
+    const totalShares = this.getTotalBeneficiaryShares() + sharePercentage;
+    if (totalShares > 100) {
+      throw new Error(`Cannot add beneficiary: total shares would exceed 100% (current: ${this.getTotalBeneficiaryShares()}%, trying to add: ${sharePercentage}%)`);
+    }
+    
+    this.beneficiaries.push(contractBeneficiary);
+    return contractBeneficiary;
+  }
+
+  removeBeneficiary(beneficiaryId: number): boolean {
+    const index = this.beneficiaries.findIndex(cb => cb.beneficiary.id === beneficiaryId);
+    if (index !== -1) {
+      this.beneficiaries.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+
+  getBeneficiaries(): ContractBeneficiary[] {
+    return [...this.beneficiaries];
+  }
+
+  getTotalBeneficiaryShares(): number {
+    return this.beneficiaries.reduce((total, cb) => total + cb.sharePercentage, 0);
+  }
+
+  getBeneficiaryByRelation(relation: BeneficiaryRelation): ContractBeneficiary[] {
+    return this.beneficiaries.filter(cb => cb.beneficiary.relation === relation);
+  }
+
+  addLegalProcedure(procedure: LegalProcedure): void {
+    this.legalProcedures.push(procedure);
+  }
+
+  getLegalProcedures(): LegalProcedure[] {
+    return [...this.legalProcedures];
+  }
+
+  getOpenLegalProcedures(): LegalProcedure[] {
+    return this.legalProcedures.filter(proc => proc.isOpen());
+  }
+
+  getLegalProceduresByStatus(status: LegalProcedureStatus): LegalProcedure[] {
+    return this.legalProcedures.filter(proc => proc.status === status);
+  }
+}
+
+export class ComprehensiveClient extends EnhancedClient {
+  private advancedContracts: AdvancedContract[] = [];
+
+  addAdvancedContract(contract: AdvancedContract): void {
+    this.advancedContracts.push(contract);
+    // Also add to parent classes for compatibility
+    super.addFullContract(contract);
+  }
+
+  getAdvancedContracts(): AdvancedContract[] {
+    return [...this.advancedContracts];
+  }
+
+  getAllBeneficiaries(): ContractBeneficiary[] {
+    const allBeneficiaries: ContractBeneficiary[] = [];
+    this.advancedContracts.forEach(contract => {
+      allBeneficiaries.push(...contract.getBeneficiaries());
+    });
+    return allBeneficiaries;
+  }
+
+  getBeneficiariesByRelation(relation: BeneficiaryRelation): ContractBeneficiary[] {
+    return this.getAllBeneficiaries().filter(cb => cb.beneficiary.relation === relation);
+  }
+
+  getAllLegalProcedures(): LegalProcedure[] {
+    const allProcedures: LegalProcedure[] = [];
+    this.advancedContracts.forEach(contract => {
+      allProcedures.push(...contract.getLegalProcedures());
+    });
+    return allProcedures;
+  }
+
+  getOpenLegalProcedures(): LegalProcedure[] {
+    return this.getAllLegalProcedures().filter(proc => proc.isOpen());
+  }
+
+  getLegalProceduresCount(): { open: number; settled: number; cancelled: number } {
+    const procedures = this.getAllLegalProcedures();
+    return {
+      open: procedures.filter(p => p.status === LegalProcedureStatus.OPEN || p.status === LegalProcedureStatus.IN_PROGRESS).length,
+      settled: procedures.filter(p => p.status === LegalProcedureStatus.SETTLED).length,
+      cancelled: procedures.filter(p => p.status === LegalProcedureStatus.CANCELLED).length,
+    };
   }
 }

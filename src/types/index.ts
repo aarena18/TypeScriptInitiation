@@ -18,7 +18,6 @@ export enum AccidentType {
 
 export type ExpertSpecialty = AccidentType;
 
-// Enums pour les paiements
 export enum PaymentMethod {
   CARD = "card",
   CASH = "cash",
@@ -54,4 +53,27 @@ export enum EntityType {
   PAYMENT = "payment",
   EXPERT = "expert",
   OPTION = "option",
+}
+
+export enum BeneficiaryRelation {
+  SPOUSE = "spouse",
+  CHILD = "child",
+  PARENT = "parent",
+  SIBLING = "sibling",
+  PARTNER_COMPANY = "partner_company",
+  OTHER = "other",
+}
+
+export enum LegalProcedureStatus {
+  OPEN = "open",
+  IN_PROGRESS = "in_progress",
+  SETTLED = "settled",
+  CANCELLED = "cancelled",
+}
+
+export enum LawyerSpecialty {
+  INSURANCE_LAW = "insurance_law",
+  CIVIL_LAW = "civil_law",
+  COMMERCIAL_LAW = "commercial_law",
+  CRIMINAL_LAW = "criminal_law",
 }

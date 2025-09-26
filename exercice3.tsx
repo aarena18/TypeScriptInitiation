@@ -898,3 +898,653 @@ console.log("\nAlice's complete event history:");
 eventLogger.getEventsByClient(enhancedAlice.id).forEach((event) => {
   console.log(`  - ${event.action}: ${event.description}`);
 });
+
+////
+// ---- Partie 4 ----
+
+enum BeneficiaryRelation {
+  SPOUSE = "spouse",
+  CHILD = "child",
+  PARENT = "parent",
+  SIBLING = "sibling",
+  PARTNER_COMPANY = "partner_company",
+  OTHER = "other",
+}
+
+class Beneficiary {
+  constructor(
+    public id: number,
+    public name: string,
+    public relation: BeneficiaryRelation,
+    public email?: string,
+    public phone?: string
+  ) {}
+
+  getContactInfo(): string {
+    const contact = [];
+    if (this.email) contact.push(`Email: ${this.email}`);
+    if (this.phone) contact.push(`Phone: ${this.phone}`);
+    return contact.length > 0 ? contact.join(", ") : "No contact info";
+  }
+}
+
+class ContractBeneficiary {
+  constructor(
+    public beneficiary: Beneficiary,
+    public sharePercentage: number, // Part du contrat en pourcentage
+    public contractId: number
+  ) {
+    if (sharePercentage <= 0 || sharePercentage > 100) {
+      throw new Error("Share percentage must be between 0 and 100");
+    }
+  }
+
+  getShareAmount(contractValue: number): number {
+    return (contractValue * this.sharePercentage) / 100;
+  }
+}
+
+enum LegalProcedureStatus {
+  OPEN = "open",
+  IN_PROGRESS = "in_progress",
+  SETTLED = "settled",
+  CANCELLED = "cancelled",
+}
+
+enum LawyerSpecialty {
+  INSURANCE_LAW = "insurance_law",
+  CIVIL_LAW = "civil_law",
+  COMMERCIAL_LAW = "commercial_law",
+  CRIMINAL_LAW = "criminal_law",
+}
+
+class Lawyer {
+  private assignedProcedures: number[] = [];
+
+  constructor(
+    public id: number,
+    public name: string,
+    public specialty: LawyerSpecialty,
+    public barNumber: string // Numéro au barreau
+  ) {}
+
+  canHandle(procedureType: LawyerSpecialty): boolean {
+    return this.specialty === procedureType;
+  }
+
+  assignProcedure(procedureId: number): void {
+    if (!this.assignedProcedures.includes(procedureId)) {
+      this.assignedProcedures.push(procedureId);
+    }
+  }
+
+  getAssignedProcedures(): number[] {
+    return [...this.assignedProcedures];
+  }
+
+  getWorkload(): number {
+    return this.assignedProcedures.length;
+  }
+
+  removeProcedure(procedureId: number): boolean {
+    const index = this.assignedProcedures.indexOf(procedureId);
+    if (index !== -1) {
+      this.assignedProcedures.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+}
+
+class LegalProcedure {
+  constructor(
+    public id: number,
+    public openingDate: Date,
+    public status: LegalProcedureStatus,
+    public accidentIds: number[], // Peut être lié à plusieurs accidents
+    public description: string,
+    public assignedLawyerId?: number
+  ) {}
+
+  isAssigned(): boolean {
+    return this.assignedLawyerId !== undefined;
+  }
+
+  addAccident(accidentId: number): void {
+    if (!this.accidentIds.includes(accidentId)) {
+      this.accidentIds.push(accidentId);
+    }
+  }
+
+  removeAccident(accidentId: number): boolean {
+    const index = this.accidentIds.indexOf(accidentId);
+    if (index !== -1) {
+      this.accidentIds.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+
+  close(
+    status: LegalProcedureStatus.SETTLED | LegalProcedureStatus.CANCELLED
+  ): void {
+    this.status = status;
+  }
+
+  isOpen(): boolean {
+    return (
+      this.status === LegalProcedureStatus.OPEN ||
+      this.status === LegalProcedureStatus.IN_PROGRESS
+    );
+  }
+}
+
+class AdvancedContract extends FullContract {
+  private beneficiaries: ContractBeneficiary[] = [];
+  private legalProcedures: LegalProcedure[] = [];
+
+  addBeneficiary(
+    beneficiary: Beneficiary,
+    sharePercentage: number
+  ): ContractBeneficiary {
+    const contractBeneficiary = new ContractBeneficiary(
+      beneficiary,
+      sharePercentage,
+      this.id
+    );
+
+    // Vérifier que le total des parts ne dépasse pas 100%
+    const totalShares = this.getTotalBeneficiaryShares() + sharePercentage;
+    if (totalShares > 100) {
+      throw new Error(
+        `Cannot add beneficiary: total shares would exceed 100% (current: ${this.getTotalBeneficiaryShares()}%, trying to add: ${sharePercentage}%)`
+      );
+    }
+
+    this.beneficiaries.push(contractBeneficiary);
+    return contractBeneficiary;
+  }
+
+  removeBeneficiary(beneficiaryId: number): boolean {
+    const index = this.beneficiaries.findIndex(
+      (cb) => cb.beneficiary.id === beneficiaryId
+    );
+    if (index !== -1) {
+      this.beneficiaries.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+
+  getBeneficiaries(): ContractBeneficiary[] {
+    return [...this.beneficiaries];
+  }
+
+  getTotalBeneficiaryShares(): number {
+    return this.beneficiaries.reduce(
+      (total, cb) => total + cb.sharePercentage,
+      0
+    );
+  }
+
+  getBeneficiaryByRelation(
+    relation: BeneficiaryRelation
+  ): ContractBeneficiary[] {
+    return this.beneficiaries.filter(
+      (cb) => cb.beneficiary.relation === relation
+    );
+  }
+
+  addLegalProcedure(procedure: LegalProcedure): void {
+    this.legalProcedures.push(procedure);
+  }
+
+  getLegalProcedures(): LegalProcedure[] {
+    return [...this.legalProcedures];
+  }
+
+  getOpenLegalProcedures(): LegalProcedure[] {
+    return this.legalProcedures.filter((proc) => proc.isOpen());
+  }
+
+  getLegalProceduresByStatus(status: LegalProcedureStatus): LegalProcedure[] {
+    return this.legalProcedures.filter((proc) => proc.status === status);
+  }
+}
+
+class ComprehensiveClient extends EnhancedClient {
+  private advancedContracts: AdvancedContract[] = [];
+
+  addAdvancedContract(contract: AdvancedContract): void {
+    this.advancedContracts.push(contract);
+    // Also add to parent classes for compatibility
+    super.addFullContract(contract);
+  }
+
+  getAdvancedContracts(): AdvancedContract[] {
+    return [...this.advancedContracts];
+  }
+
+  getAllBeneficiaries(): ContractBeneficiary[] {
+    const allBeneficiaries: ContractBeneficiary[] = [];
+    this.advancedContracts.forEach((contract) => {
+      allBeneficiaries.push(...contract.getBeneficiaries());
+    });
+    return allBeneficiaries;
+  }
+
+  getBeneficiariesByRelation(
+    relation: BeneficiaryRelation
+  ): ContractBeneficiary[] {
+    return this.getAllBeneficiaries().filter(
+      (cb) => cb.beneficiary.relation === relation
+    );
+  }
+
+  getAllLegalProcedures(): LegalProcedure[] {
+    const allProcedures: LegalProcedure[] = [];
+    this.advancedContracts.forEach((contract) => {
+      allProcedures.push(...contract.getLegalProcedures());
+    });
+    return allProcedures;
+  }
+
+  getOpenLegalProcedures(): LegalProcedure[] {
+    return this.getAllLegalProcedures().filter((proc) => proc.isOpen());
+  }
+
+  getLegalProceduresCount(): {
+    open: number;
+    settled: number;
+    cancelled: number;
+  } {
+    const procedures = this.getAllLegalProcedures();
+    return {
+      open: procedures.filter(
+        (p) =>
+          p.status === LegalProcedureStatus.OPEN ||
+          p.status === LegalProcedureStatus.IN_PROGRESS
+      ).length,
+      settled: procedures.filter(
+        (p) => p.status === LegalProcedureStatus.SETTLED
+      ).length,
+      cancelled: procedures.filter(
+        (p) => p.status === LegalProcedureStatus.CANCELLED
+      ).length,
+    };
+  }
+}
+
+function assignLawyerToProcedure(
+  procedure: LegalProcedure,
+  lawyers: Lawyer[],
+  requiredSpecialty?: LawyerSpecialty
+): Lawyer | null {
+  let availableLawyers = lawyers;
+
+  if (requiredSpecialty) {
+    availableLawyers = lawyers.filter((lawyer) =>
+      lawyer.canHandle(requiredSpecialty)
+    );
+  }
+
+  availableLawyers.sort((a, b) => a.getWorkload() - b.getWorkload());
+
+  if (availableLawyers.length > 0) {
+    const assignedLawyer = availableLawyers[0];
+    procedure.assignedLawyerId = assignedLawyer.id;
+    assignedLawyer.assignProcedure(procedure.id);
+    procedure.status = LegalProcedureStatus.IN_PROGRESS;
+    return assignedLawyer;
+  }
+
+  return null;
+}
+
+// ---- Tests Partie 4 ----
+
+console.log("\n=== TESTS PARTIE 4: Bénéficiaires et Procédures ===");
+
+const spouse = new Beneficiary(
+  1,
+  "Marie Alice Martin",
+  BeneficiaryRelation.SPOUSE,
+  "marie.martin@email.com",
+  "0607080910"
+);
+
+const child1 = new Beneficiary(
+  2,
+  "Lucas Martin",
+  BeneficiaryRelation.CHILD,
+  "lucas.martin@email.com"
+);
+
+const child2 = new Beneficiary(3, "Emma Martin", BeneficiaryRelation.CHILD);
+
+const partnerCompany = new Beneficiary(
+  4,
+  "TechCorp Solutions",
+  BeneficiaryRelation.PARTNER_COMPANY,
+  "contact@techcorp.com",
+  "0102030405"
+);
+
+console.log("\n=== Beneficiaries Created ===");
+console.log(
+  `Spouse: ${spouse.name} (${spouse.relation}) - ${spouse.getContactInfo()}`
+);
+console.log(
+  `Child 1: ${child1.name} (${child1.relation}) - ${child1.getContactInfo()}`
+);
+console.log(
+  `Child 2: ${child2.name} (${child2.relation}) - ${child2.getContactInfo()}`
+);
+console.log(
+  `Partner: ${partnerCompany.name} (${
+    partnerCompany.relation
+  }) - ${partnerCompany.getContactInfo()}`
+);
+
+const comprehensiveAlice = new ComprehensiveClient(
+  alice.id,
+  alice.contact,
+  alice.type
+);
+
+const aliceAdvancedContract = new AdvancedContract(
+  aliceContract1.id,
+  aliceContract1.basePrice,
+  aliceContract1.status,
+  aliceContract1.reduction,
+  aliceContract1.bonus
+);
+
+aliceAdvancedContract.addAccident(aliceFireAccident);
+aliceAdvancedContract.addAccident(aliceTheftAccident);
+aliceAdvancedContract.addPayment(alicePayment1);
+aliceAdvancedContract.addPayment(alicePayment2);
+aliceAdvancedContract.addOption(tripAssistance);
+aliceAdvancedContract.addOption(juridicalProtection);
+
+comprehensiveAlice.addAdvancedContract(aliceAdvancedContract);
+
+try {
+  const spouseBeneficiary = aliceAdvancedContract.addBeneficiary(spouse, 50); // 50% pour le conjoint
+  const child1Beneficiary = aliceAdvancedContract.addBeneficiary(child1, 25); // 25% pour l'enfant 1
+  const child2Beneficiary = aliceAdvancedContract.addBeneficiary(child2, 20); // 20% pour l'enfant 2
+
+  console.log(`${spouse.name}: ${spouseBeneficiary.sharePercentage}%`);
+  console.log(`${child1.name}: ${child1Beneficiary.sharePercentage}%`);
+  console.log(`${child2.name}: ${child2Beneficiary.sharePercentage}%`);
+  console.log(
+    `Total beneficiary shares: ${aliceAdvancedContract.getTotalBeneficiaryShares()}%`
+  );
+
+  try {
+    aliceAdvancedContract.addBeneficiary(partnerCompany, 10);
+  } catch (error) {
+    console.log(`Cannot add partner company: ${error.message}`);
+  }
+} catch (error) {
+  console.error(`Error adding beneficiaries: ${error.message}`);
+}
+
+const insuranceLawyer = new Lawyer(
+  1,
+  "Maître Jean Dupuis",
+  LawyerSpecialty.INSURANCE_LAW,
+  "INS2025001"
+);
+
+const civilLawyer = new Lawyer(
+  2,
+  "Maître Sophie Martin",
+  LawyerSpecialty.CIVIL_LAW,
+  "CIV2025002"
+);
+
+const commercialLawyer = new Lawyer(
+  3,
+  "Maître Pierre Durand",
+  LawyerSpecialty.COMMERCIAL_LAW,
+  "COM2025003"
+);
+
+const lawyersList = [insuranceLawyer, civilLawyer, commercialLawyer];
+
+console.log("\n=== Lawyers Created ===");
+lawyersList.forEach((lawyer) => {
+  console.log(
+    `${lawyer.name} - Specialty: ${lawyer.specialty} - Bar #: ${lawyer.barNumber}`
+  );
+});
+
+const fireDisputeProcedure = new LegalProcedure(
+  1,
+  new Date("2025-09-27"),
+  LegalProcedureStatus.OPEN,
+  [aliceFireAccident.id],
+  "Dispute over fire damage coverage amount - Client contests the expert assessment"
+);
+
+const theftProcedure = new LegalProcedure(
+  2,
+  new Date("2025-09-28"),
+  LegalProcedureStatus.OPEN,
+  [aliceTheftAccident.id],
+  "Third party claims involving the theft - Potential negligence case"
+);
+
+// Procédure complexe liée à plusieurs accidents
+const multiAccidentProcedure = new LegalProcedure(
+  3,
+  new Date("2025-09-29"),
+  LegalProcedureStatus.OPEN,
+  [aliceFireAccident.id, aliceTheftAccident.id],
+  "Class action involving multiple incidents - Potential fraud investigation"
+);
+
+console.log("\n=== Legal Procedures Created ===");
+console.log(
+  `Procedure ${fireDisputeProcedure.id}: ${fireDisputeProcedure.description}`
+);
+console.log(`  - Status: ${fireDisputeProcedure.status}`);
+console.log(
+  `  - Related accidents: ${fireDisputeProcedure.accidentIds.join(", ")}`
+);
+
+console.log(`Procedure ${theftProcedure.id}: ${theftProcedure.description}`);
+console.log(`  - Status: ${theftProcedure.status}`);
+console.log(`  - Related accidents: ${theftProcedure.accidentIds.join(", ")}`);
+
+console.log(
+  `Procedure ${multiAccidentProcedure.id}: ${multiAccidentProcedure.description}`
+);
+console.log(`  - Status: ${multiAccidentProcedure.status}`);
+console.log(
+  `  - Related accidents: ${multiAccidentProcedure.accidentIds.join(", ")}`
+);
+
+const assignedLawyer1 = assignLawyerToProcedure(
+  fireDisputeProcedure,
+  lawyersList,
+  LawyerSpecialty.INSURANCE_LAW
+);
+console.log(
+  `\nFire dispute assigned to: ${
+    assignedLawyer1?.name || "No lawyer available"
+  }`
+);
+if (assignedLawyer1) {
+  console.log(`  - Lawyer workload: ${assignedLawyer1.getWorkload()} cases`);
+  console.log(`  - Procedure status: ${fireDisputeProcedure.status}`);
+}
+
+const assignedLawyer2 = assignLawyerToProcedure(
+  theftProcedure,
+  lawyersList,
+  LawyerSpecialty.CIVIL_LAW
+);
+console.log(
+  `\nTheft procedure assigned to: ${
+    assignedLawyer2?.name || "No lawyer available"
+  }`
+);
+if (assignedLawyer2) {
+  console.log(`  - Lawyer workload: ${assignedLawyer2.getWorkload()} cases`);
+  console.log(`  - Procedure status: ${theftProcedure.status}`);
+}
+
+const assignedLawyer3 = assignLawyerToProcedure(
+  multiAccidentProcedure,
+  lawyersList
+);
+console.log(
+  `\nMulti-accident procedure assigned to: ${
+    assignedLawyer3?.name || "No lawyer available"
+  }`
+);
+if (assignedLawyer3) {
+  console.log(`  - Lawyer workload: ${assignedLawyer3.getWorkload()} cases`);
+  console.log(`  - Procedure status: ${multiAccidentProcedure.status}`);
+}
+
+aliceAdvancedContract.addLegalProcedure(fireDisputeProcedure);
+aliceAdvancedContract.addLegalProcedure(theftProcedure);
+aliceAdvancedContract.addLegalProcedure(multiAccidentProcedure);
+
+const comprehensiveBob = new ComprehensiveClient(bob.id, bob.contact, bob.type);
+
+const bobAdvancedContract = new AdvancedContract(
+  bobContract.id,
+  bobContract.basePrice,
+  bobContract.status
+);
+
+bobAdvancedContract.addAccident(bobWaterAccident);
+bobAdvancedContract.addPayment(bobPayment1);
+bobAdvancedContract.addOption(familyProtection);
+
+comprehensiveBob.addAdvancedContract(bobAdvancedContract);
+
+const bobWaterDisputeProcedure = new LegalProcedure(
+  4,
+  new Date("2025-09-30"),
+  LegalProcedureStatus.OPEN,
+  [bobWaterAccident.id],
+  "Water damage dispute - Tenant vs Landlord responsibility"
+);
+
+const bobInsuranceProcedure = new LegalProcedure(
+  5,
+  new Date("2025-10-01"),
+  LegalProcedureStatus.OPEN,
+  [bobWaterAccident.id],
+  "Insurance coverage dispute - Policy interpretation"
+);
+
+console.log("\n=== Bob's Legal Procedures Created ===");
+console.log(
+  `Procedure ${bobWaterDisputeProcedure.id}: ${bobWaterDisputeProcedure.description}`
+);
+console.log(
+  `Procedure ${bobInsuranceProcedure.id}: ${bobInsuranceProcedure.description}`
+);
+
+const bobAssignedLawyer1 = assignLawyerToProcedure(
+  bobWaterDisputeProcedure,
+  lawyersList,
+  LawyerSpecialty.CIVIL_LAW // Même spécialité que Sophie Martin
+);
+console.log(
+  `\nBob's water dispute assigned to: ${
+    bobAssignedLawyer1?.name || "No lawyer available"
+  }`
+);
+if (bobAssignedLawyer1) {
+  console.log(
+    `  - Lawyer workload after assignment: ${bobAssignedLawyer1.getWorkload()} cases`
+  );
+}
+
+const bobAssignedLawyer2 = assignLawyerToProcedure(
+  bobInsuranceProcedure,
+  lawyersList,
+  LawyerSpecialty.INSURANCE_LAW // Même spécialité que Jean Dupuis
+);
+console.log(
+  `\nBob's insurance dispute assigned to: ${
+    bobAssignedLawyer2?.name || "No lawyer available"
+  }`
+);
+if (bobAssignedLawyer2) {
+  console.log(
+    `  - Lawyer workload after assignment: ${bobAssignedLawyer2.getWorkload()} cases`
+  );
+}
+
+bobAdvancedContract.addLegalProcedure(bobWaterDisputeProcedure);
+bobAdvancedContract.addLegalProcedure(bobInsuranceProcedure);
+
+console.log("\n=== Alice's Comprehensive Profile ===");
+console.log(
+  `Client: ${comprehensiveAlice.contact.email} (${comprehensiveAlice.type})`
+);
+console.log(
+  `Active contracts: ${comprehensiveAlice.getActiveFullContracts().length}`
+);
+console.log(
+  `Total beneficiaries: ${comprehensiveAlice.getAllBeneficiaries().length}`
+);
+
+const beneficiaryStats = {
+  spouse: comprehensiveAlice.getBeneficiariesByRelation(
+    BeneficiaryRelation.SPOUSE
+  ).length,
+  children: comprehensiveAlice.getBeneficiariesByRelation(
+    BeneficiaryRelation.CHILD
+  ).length,
+  companies: comprehensiveAlice.getBeneficiariesByRelation(
+    BeneficiaryRelation.PARTNER_COMPANY
+  ).length,
+};
+console.log(`  - Spouses: ${beneficiaryStats.spouse}`);
+console.log(`  - Children: ${beneficiaryStats.children}`);
+console.log(`  - Partner companies: ${beneficiaryStats.companies}`);
+
+const legalStats = comprehensiveAlice.getLegalProceduresCount();
+console.log(
+  `Legal procedures: ${comprehensiveAlice.getAllLegalProcedures().length} total`
+);
+console.log(`  - Open/In Progress: ${legalStats.open}`);
+console.log(`  - Settled: ${legalStats.settled}`);
+console.log(`  - Cancelled: ${legalStats.cancelled}`);
+
+fireDisputeProcedure.close(LegalProcedureStatus.SETTLED);
+if (assignedLawyer1) {
+  assignedLawyer1.removeProcedure(fireDisputeProcedure.id);
+}
+
+console.log(
+  `\nFire dispute procedure settled. Lawyer ${
+    assignedLawyer1?.name
+  } workload: ${assignedLawyer1?.getWorkload()} cases`
+);
+
+const updatedLegalStats = comprehensiveAlice.getLegalProceduresCount();
+console.log(`Updated legal procedures:`);
+console.log(`  - Open/In Progress: ${updatedLegalStats.open}`);
+console.log(`  - Settled: ${updatedLegalStats.settled}`);
+console.log(`  - Cancelled: ${updatedLegalStats.cancelled}`);
+
+// Afficher tous les avocats et leur charge de travail
+console.log("\n=== Lawyers Workload Summary ===");
+lawyersList.forEach((lawyer) => {
+  console.log(
+    `${lawyer.name} (${lawyer.specialty}): ${lawyer.getWorkload()} active cases`
+  );
+  if (lawyer.getWorkload() > 0) {
+    console.log(`  - Cases: ${lawyer.getAssignedProcedures().join(", ")}`);
+  }
+});
