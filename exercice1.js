@@ -4,16 +4,15 @@
 ////
 //1. Addition simple
 function add(x, y) {
-    return x + y;
+  return x + y;
 }
 let resultOne = add(2, 6);
 console.log(resultOne);
 ////
 //2. Paramètre optionnel
 function greet(n) {
-    if (n === undefined)
-        return "hello Guest !";
-    return "hello " + n + " !";
+  if (n === undefined) return "hello Guest !";
+  return "hello " + n + " !";
 }
 let resultTwoF = greet();
 let resultTwoS = greet("Ambre");
@@ -32,7 +31,7 @@ console.log(numbers);
 ////
 //5. Fonction générique identité
 function identity(arr) {
-    return arr;
+  return arr;
 }
 let userName = identity(["ambre", "paul"]);
 let age = identity([22, 30]);
@@ -41,7 +40,7 @@ console.log(age);
 ////
 // 6. Premier élément d’un tableau
 function first(arr) {
-    return arr[0];
+  return arr[0];
 }
 let userNameFirst = first(["pierre", "jacques"]);
 let ageFirst = first([12, 90]);
@@ -50,12 +49,11 @@ console.log(ageFirst);
 ////
 // 7. Union et narrowing
 function printId(id) {
-    if (typeof id === "number") {
-        console.log("ID: " + id);
-    }
-    else {
-        console.log("User: " + id);
-    }
+  if (typeof id === "number") {
+    console.log("ID: " + id);
+  } else {
+    console.log("User: " + id);
+  }
 }
 let userIdOne = 1234353;
 let userIdTwo = "alright";
@@ -64,9 +62,8 @@ console.log(userIdTwo);
 ////
 // 8. Paramètre par défaut + retour typé
 function pow(base, exponent = 2) {
-    return base ** exponent;
+  return base ** exponent;
 }
-;
 let testOne = pow(4, 4);
 console.log(testOne);
 ////
@@ -75,7 +72,7 @@ console.log(testOne);
 // qui renvoie la propriété .length de l’argument.
 // La tester avec un string et un tableau.
 function getLenght(arg) {
-    return arg.length;
+  return arg.length;
 }
 let lenghtFirst = getLenght(["pierre", "jacques"]);
 let lenghtSec = getLenght([12, 90, 3]);

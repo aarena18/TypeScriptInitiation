@@ -84,7 +84,7 @@ console.log(userIdTwo);
 // 8. Paramètre par défaut + retour typé
 function pow(base: number, exponent: number = 2): number {
   return base ** exponent;
-}; 
+}
 
 let testOne = pow(4, 4);
 
@@ -112,4 +112,4 @@ let person = merge({ name: "Alice" }, { age: 25 });
 
 console.log(person);
 console.log(person.name);
-console.log(person.age); 
+console.log(person.age);
