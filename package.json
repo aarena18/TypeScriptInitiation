@@ -1,0 +1,15 @@
+{
+  "name": "insurance-system",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Complete insurance system with reimbursements, audits, and reinsurance",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc src/**/*.ts --target es2020 --module es2020 --outDir dist --moduleResolution node",
+    "test": "npm run build && node run-parte5-6-tests.js",
+    "test-parts-5-6": "node run-parte5-6-tests.js"
+  },
+  "keywords": ["insurance", "typescript", "reimbursement", "audit", "reinsurance"],
+  "author": "Student",
+  "license": "ISC"
+}

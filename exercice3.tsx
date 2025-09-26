@@ -1548,3 +1548,986 @@ lawyersList.forEach((lawyer) => {
     console.log(`  - Cases: ${lawyer.getAssignedProcedures().join(", ")}`);
   }
 });
+
+////
+// ---- Partie 5 ----
+
+enum ReimbursementMethod {
+  BANK_TRANSFER = "bank_transfer",
+  CASH = "cash",
+  CARD = "card",
+}
+
+enum ReimbursementStatus {
+  PENDING = "pending",
+  PROCESSED = "processed",
+  FAILED = "failed",
+}
+
+class Reimbursement {
+  constructor(
+    public id: number,
+    public accidentId: number,
+    public amount: number,
+    public date: Date,
+    public method: ReimbursementMethod,
+    public status: ReimbursementStatus = ReimbursementStatus.PENDING,
+    public isPartial: boolean = false,
+    public description?: string
+  ) {}
+
+  process(): void {
+    this.status = ReimbursementStatus.PROCESSED;
+  }
+
+  fail(): void {
+    this.status = ReimbursementStatus.FAILED;
+  }
+
+  isProcessed(): boolean {
+    return this.status === ReimbursementStatus.PROCESSED;
+  }
+}
+
+class AccidentReimbursement {
+  private reimbursements: Reimbursement[] = [];
+
+  constructor(public accidentId: number, public totalClaimAmount: number) {}
+
+  addReimbursement(reimbursement: Reimbursement): void {
+    if (reimbursement.accidentId !== this.accidentId) {
+      throw new Error("Reimbursement must be for the same accident");
+    }
+
+    const currentTotal = this.getTotalReimbursed();
+    if (currentTotal + reimbursement.amount > this.totalClaimAmount) {
+      throw new Error(
+        `Reimbursement amount exceeds claim total. Available: €${
+          this.totalClaimAmount - currentTotal
+        }`
+      );
+    }
+
+    this.reimbursements.push(reimbursement);
+  }
+
+  getReimbursements(): Reimbursement[] {
+    return [...this.reimbursements];
+  }
+
+  getTotalReimbursed(): number {
+    return this.reimbursements.reduce((total, reimbursement) => {
+      return reimbursement.isProcessed() ? total + reimbursement.amount : total;
+    }, 0);
+  }
+
+  getRemainingAmount(): number {
+    return this.totalClaimAmount - this.getTotalReimbursed();
+  }
+
+  isFullyReimbursed(): boolean {
+    return this.getRemainingAmount() === 0;
+  }
+
+  getProcessedReimbursements(): Reimbursement[] {
+    return this.reimbursements.filter((r) => r.isProcessed());
+  }
+
+  getPendingReimbursements(): Reimbursement[] {
+    return this.reimbursements.filter(
+      (r) => r.status === ReimbursementStatus.PENDING
+    );
+  }
+}
+
+enum AnomalyStatus {
+  DETECTED = "detected",
+  INVESTIGATING = "investigating",
+  RESOLVED = "resolved",
+}
+
+enum AnomalyType {
+  CONTRACT = "contract",
+  PAYMENT = "payment",
+  ACCIDENT = "accident",
+  REIMBURSEMENT = "reimbursement",
+}
+
+enum AnomalySeverity {
+  LOW = "low",
+  MEDIUM = "medium",
+  HIGH = "high",
+  CRITICAL = "critical",
+}
+
+class Anomaly {
+  constructor(
+    public id: number,
+    public type: AnomalyType,
+    public entityId: number,
+    public description: string,
+    public severity: AnomalySeverity,
+    public status: AnomalyStatus = AnomalyStatus.DETECTED,
+    public detectedDate: Date = new Date(),
+    public resolvedDate?: Date,
+    public assignedAuditorId?: number
+  ) {}
+
+  investigate(): void {
+    this.status = AnomalyStatus.INVESTIGATING;
+  }
+
+  resolve(): void {
+    this.status = AnomalyStatus.RESOLVED;
+    this.resolvedDate = new Date();
+  }
+
+  isResolved(): boolean {
+    return this.status === AnomalyStatus.RESOLVED;
+  }
+
+  getDaysToResolve(): number {
+    if (!this.resolvedDate) return -1;
+    return Math.floor(
+      (this.resolvedDate.getTime() - this.detectedDate.getTime()) /
+        (1000 * 3600 * 24)
+    );
+  }
+}
+
+class Audit {
+  private anomalies: Anomaly[] = [];
+  private anomalyIdCounter: number = 1;
+
+  constructor(
+    public id: number,
+    public startDate: Date,
+    public endDate: Date,
+    public report: string,
+    public auditorName: string
+  ) {}
+
+  addAnomaly(
+    type: AnomalyType,
+    entityId: number,
+    description: string,
+    severity: AnomalySeverity
+  ): Anomaly {
+    const anomaly = new Anomaly(
+      this.anomalyIdCounter++,
+      type,
+      entityId,
+      description,
+      severity
+    );
+    this.anomalies.push(anomaly);
+    return anomaly;
+  }
+
+  getAnomalies(): Anomaly[] {
+    return [...this.anomalies];
+  }
+
+  getAnomaliesByType(type: AnomalyType): Anomaly[] {
+    return this.anomalies.filter((anomaly) => anomaly.type === type);
+  }
+
+  getAnomaliesBySeverity(severity: AnomalySeverity): Anomaly[] {
+    return this.anomalies.filter((anomaly) => anomaly.severity === severity);
+  }
+
+  getUnresolvedAnomalies(): Anomaly[] {
+    return this.anomalies.filter((anomaly) => !anomaly.isResolved());
+  }
+
+  resolveAnomaly(anomalyId: number): boolean {
+    const anomaly = this.anomalies.find((a) => a.id === anomalyId);
+    if (anomaly) {
+      anomaly.resolve();
+      return true;
+    }
+    return false;
+  }
+
+  getCompletionRate(): number {
+    if (this.anomalies.length === 0) return 100;
+    const resolved = this.anomalies.filter((a) => a.isResolved()).length;
+    return Math.round((resolved / this.anomalies.length) * 100);
+  }
+
+  getAnomalyCountByStatus(): {
+    detected: number;
+    investigating: number;
+    resolved: number;
+  } {
+    return {
+      detected: this.anomalies.filter(
+        (a) => a.status === AnomalyStatus.DETECTED
+      ).length,
+      investigating: this.anomalies.filter(
+        (a) => a.status === AnomalyStatus.INVESTIGATING
+      ).length,
+      resolved: this.anomalies.filter(
+        (a) => a.status === AnomalyStatus.RESOLVED
+      ).length,
+    };
+  }
+}
+
+class AuditService {
+  static detectContractAnomalies(contracts: AdvancedContract[]): Anomaly[] {
+    const anomalies: Anomaly[] = [];
+    let anomalyId = 1;
+
+    contracts.forEach((contract) => {
+      if (contract.getBeneficiaries().length === 0) {
+        anomalies.push(
+          new Anomaly(
+            anomalyId++,
+            AnomalyType.CONTRACT,
+            contract.id,
+            "Contract has no beneficiaries",
+            AnomalySeverity.HIGH
+          )
+        );
+      }
+
+      const totalShares = contract.getTotalBeneficiaryShares();
+      if (totalShares < 100 && contract.getBeneficiaries().length > 0) {
+        anomalies.push(
+          new Anomaly(
+            anomalyId++,
+            AnomalyType.CONTRACT,
+            contract.id,
+            `Beneficiary shares incomplete: ${totalShares}% < 100%`,
+            AnomalySeverity.MEDIUM
+          )
+        );
+      }
+
+      const unassignedAccidents = contract.getUnassignedAccidents();
+      if (unassignedAccidents.length > 0) {
+        anomalies.push(
+          new Anomaly(
+            anomalyId++,
+            AnomalyType.ACCIDENT,
+            contract.id,
+            `${unassignedAccidents.length} unassigned accidents found`,
+            AnomalySeverity.HIGH
+          )
+        );
+      }
+
+      const failedPayments = contract.getFailedPayments();
+      if (failedPayments.length > 2) {
+        anomalies.push(
+          new Anomaly(
+            anomalyId++,
+            AnomalyType.PAYMENT,
+            contract.id,
+            `Multiple payment failures: ${failedPayments.length} failed payments`,
+            AnomalySeverity.HIGH
+          )
+        );
+      }
+    });
+
+    return anomalies;
+  }
+}
+
+////
+// ---- Partie 6 ----
+
+enum ReinsuranceStatus {
+  ACTIVE = "active",
+  EXPIRED = "expired",
+  SUSPENDED = "suspended",
+}
+
+class InsuranceCompany {
+  constructor(
+    public id: number,
+    public name: string,
+    public country: string,
+    public rating: string, // ex: "AA+", "A", "BBB"
+    public contactEmail: string
+  ) {}
+
+  getRiskLevel(): string {
+    const ratingLevel = this.rating.toLowerCase();
+    if (ratingLevel.includes("aa")) return "Very Low";
+    if (ratingLevel.includes("a")) return "Low";
+    if (ratingLevel.includes("bb")) return "Medium";
+    return "High";
+  }
+}
+
+class ReinsuranceContract {
+  constructor(
+    public id: number,
+    public reinsurer: InsuranceCompany,
+    public startDate: Date,
+    public endDate: Date,
+    public riskPercentage: number, // 0-100
+    public maxCoverageAmount: number,
+    public status: ReinsuranceStatus = ReinsuranceStatus.ACTIVE
+  ) {
+    if (riskPercentage < 0 || riskPercentage > 100) {
+      throw new Error("Risk percentage must be between 0 and 100");
+    }
+  }
+
+  isActive(date: Date = new Date()): boolean {
+    return (
+      this.status === ReinsuranceStatus.ACTIVE &&
+      date >= this.startDate &&
+      date <= this.endDate
+    );
+  }
+
+  getCoverageForAmount(amount: number): number {
+    if (!this.isActive()) return 0;
+    const coverage = (amount * this.riskPercentage) / 100;
+    return Math.min(coverage, this.maxCoverageAmount);
+  }
+
+  suspend(): void {
+    this.status = ReinsuranceStatus.SUSPENDED;
+  }
+
+  activate(): void {
+    this.status = ReinsuranceStatus.ACTIVE;
+  }
+
+  expire(): void {
+    this.status = ReinsuranceStatus.EXPIRED;
+  }
+}
+
+class ReinsuranceCoverage {
+  private reinsuranceContracts: ReinsuranceContract[] = [];
+
+  constructor(public contractId: number) {}
+
+  addReinsurance(contract: ReinsuranceContract): void {
+    // Vérifier que le total ne dépasse pas 100%
+    const currentTotal = this.getTotalCoveragePercentage();
+    if (currentTotal + contract.riskPercentage > 100) {
+      throw new Error(
+        `Cannot add reinsurance: total coverage would exceed 100% (current: ${currentTotal}%, trying to add: ${contract.riskPercentage}%)`
+      );
+    }
+    this.reinsuranceContracts.push(contract);
+  }
+
+  removeReinsurance(contractId: number): boolean {
+    const index = this.reinsuranceContracts.findIndex(
+      (c) => c.id === contractId
+    );
+    if (index !== -1) {
+      this.reinsuranceContracts.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+
+  getActiveReinsuranceContracts(): ReinsuranceContract[] {
+    return this.reinsuranceContracts.filter((c) => c.isActive());
+  }
+
+  getAllReinsuranceContracts(): ReinsuranceContract[] {
+    return [...this.reinsuranceContracts];
+  }
+
+  getTotalCoveragePercentage(): number {
+    return this.getActiveReinsuranceContracts().reduce((total, contract) => {
+      return total + contract.riskPercentage;
+    }, 0);
+  }
+
+  getSelfRetainedPercentage(): number {
+    return 100 - this.getTotalCoveragePercentage();
+  }
+
+  calculateReinsuranceShares(
+    claimAmount: number
+  ): Map<string, { company: string; amount: number; percentage: number }> {
+    const shares = new Map<
+      string,
+      { company: string; amount: number; percentage: number }
+    >();
+    const activeContracts = this.getActiveReinsuranceContracts();
+
+    // Calculer les parts des réassureurs
+    activeContracts.forEach((contract) => {
+      const coverage = contract.getCoverageForAmount(claimAmount);
+      const actualPercentage = (coverage / claimAmount) * 100;
+
+      shares.set(`reinsurer_${contract.id}`, {
+        company: contract.reinsurer.name,
+        amount: coverage,
+        percentage: actualPercentage,
+      });
+    });
+
+    const totalReinsured = Array.from(shares.values()).reduce(
+      (sum, share) => sum + share.amount,
+      0
+    );
+    const selfRetained = claimAmount - totalReinsured;
+
+    if (selfRetained > 0) {
+      shares.set("self_retained", {
+        company: "Self Retained",
+        amount: selfRetained,
+        percentage: (selfRetained / claimAmount) * 100,
+      });
+    }
+
+    return shares;
+  }
+
+  validateCoverage(): { isValid: boolean; issues: string[] } {
+    const issues: string[] = [];
+    const totalPercentage = this.getTotalCoveragePercentage();
+
+    if (totalPercentage > 100) {
+      issues.push(`Total coverage exceeds 100%: ${totalPercentage}%`);
+    }
+
+    const activeContracts = this.getActiveReinsuranceContracts();
+    const expiredContracts = this.reinsuranceContracts.filter(
+      (c) => !c.isActive()
+    );
+
+    if (expiredContracts.length > 0) {
+      issues.push(
+        `${expiredContracts.length} expired or inactive contracts found`
+      );
+    }
+
+    if (totalPercentage < 50 && activeContracts.length === 0) {
+      issues.push("No reinsurance coverage - high risk exposure");
+    }
+
+    return {
+      isValid: issues.length === 0,
+      issues,
+    };
+  }
+}
+
+class UltimateContract extends AdvancedContract {
+  private accidentReimbursements: Map<number, AccidentReimbursement> =
+    new Map();
+  private reinsuranceCoverage?: ReinsuranceCoverage;
+  private audits: Audit[] = [];
+
+  constructor(
+    id: number,
+    basePrice: number,
+    status: ContractStatus,
+    reduction: number = 0,
+    bonus: number = 0
+  ) {
+    super(id, basePrice, status, reduction, bonus);
+  }
+
+  createAccidentReimbursement(
+    accidentId: number,
+    claimAmount: number
+  ): AccidentReimbursement {
+    if (this.accidentReimbursements.has(accidentId)) {
+      throw new Error(
+        `Reimbursement already exists for accident ${accidentId}`
+      );
+    }
+
+    const reimbursement = new AccidentReimbursement(accidentId, claimAmount);
+    this.accidentReimbursements.set(accidentId, reimbursement);
+    return reimbursement;
+  }
+
+  getAccidentReimbursement(
+    accidentId: number
+  ): AccidentReimbursement | undefined {
+    return this.accidentReimbursements.get(accidentId);
+  }
+
+  getAllAccidentReimbursements(): AccidentReimbursement[] {
+    return Array.from(this.accidentReimbursements.values());
+  }
+
+  getTotalReimbursements(): number {
+    return Array.from(this.accidentReimbursements.values()).reduce(
+      (total, ar) => {
+        return total + ar.getTotalReimbursed();
+      },
+      0
+    );
+  }
+
+  setReinsuranceCoverage(coverage: ReinsuranceCoverage): void {
+    this.reinsuranceCoverage = coverage;
+  }
+
+  getReinsuranceCoverage(): ReinsuranceCoverage | undefined {
+    return this.reinsuranceCoverage;
+  }
+
+  calculateReinsuranceDistribution(
+    claimAmount: number
+  ): Map<
+    string,
+    { company: string; amount: number; percentage: number }
+  > | null {
+    if (!this.reinsuranceCoverage) {
+      return null;
+    }
+    return this.reinsuranceCoverage.calculateReinsuranceShares(claimAmount);
+  }
+
+  addAudit(audit: Audit): void {
+    this.audits.push(audit);
+  }
+
+  getAudits(): Audit[] {
+    return [...this.audits];
+  }
+
+  getLatestAudit(): Audit | undefined {
+    return this.audits.sort(
+      (a, b) => b.startDate.getTime() - a.startDate.getTime()
+    )[0];
+  }
+
+  getUnresolvedAnomalies(): Anomaly[] {
+    const allAnomalies: Anomaly[] = [];
+    this.audits.forEach((audit) => {
+      allAnomalies.push(...audit.getUnresolvedAnomalies());
+    });
+    return allAnomalies;
+  }
+}
+
+class UltimateClient extends ComprehensiveClient {
+  private ultimateContracts: UltimateContract[] = [];
+
+  addUltimateContract(contract: UltimateContract): void {
+    this.ultimateContracts.push(contract);
+    super.addAdvancedContract(contract);
+  }
+
+  getUltimateContracts(): UltimateContract[] {
+    return [...this.ultimateContracts];
+  }
+
+  getTotalReimbursements(): number {
+    return this.ultimateContracts.reduce((total, contract) => {
+      return total + contract.getTotalReimbursements();
+    }, 0);
+  }
+
+  getActiveReinsuranceContracts(): ReinsuranceContract[] {
+    const allContracts: ReinsuranceContract[] = [];
+    this.ultimateContracts.forEach((contract) => {
+      const coverage = contract.getReinsuranceCoverage();
+      if (coverage) {
+        allContracts.push(...coverage.getActiveReinsuranceContracts());
+      }
+    });
+    return allContracts;
+  }
+
+  getAllUnresolvedAnomalies(): Anomaly[] {
+    const allAnomalies: Anomaly[] = [];
+    this.ultimateContracts.forEach((contract) => {
+      allAnomalies.push(...contract.getUnresolvedAnomalies());
+    });
+    return allAnomalies;
+  }
+
+  getReinsuranceCoverageOverview(): {
+    totalCoverage: number;
+    selfRetained: number;
+    riskDistribution: Map<string, number>;
+  } {
+    const riskDistribution = new Map<string, number>();
+    let totalCoverage = 0;
+    let contractCount = 0;
+
+    this.ultimateContracts.forEach((contract) => {
+      const coverage = contract.getReinsuranceCoverage();
+      if (coverage) {
+        contractCount++;
+        totalCoverage += coverage.getTotalCoveragePercentage();
+
+        coverage.getActiveReinsuranceContracts().forEach((reinsContract) => {
+          const existing =
+            riskDistribution.get(reinsContract.reinsurer.name) || 0;
+          riskDistribution.set(
+            reinsContract.reinsurer.name,
+            existing + reinsContract.riskPercentage
+          );
+        });
+      }
+    });
+
+    const avgCoverage = contractCount > 0 ? totalCoverage / contractCount : 0;
+
+    return {
+      totalCoverage: avgCoverage,
+      selfRetained: 100 - avgCoverage,
+      riskDistribution,
+    };
+  }
+}
+
+// ---- Tests Parties 5 et 6 ----
+
+const ultimateAlice = new UltimateClient(alice.id, alice.contact, alice.type);
+const ultimateBob = new UltimateClient(bob.id, bob.contact, bob.type);
+
+const aliceUltimateContract = new UltimateContract(
+  aliceContract1.id,
+  aliceContract1.basePrice,
+  aliceContract1.status,
+  aliceContract1.reduction,
+  aliceContract1.bonus
+);
+
+const bobUltimateContract = new UltimateContract(
+  bobContract.id,
+  bobContract.basePrice,
+  bobContract.status
+);
+
+aliceUltimateContract.addAccident(aliceFireAccident);
+aliceUltimateContract.addAccident(aliceTheftAccident);
+aliceUltimateContract.addPayment(alicePayment1);
+aliceUltimateContract.addPayment(alicePayment2);
+aliceUltimateContract.addOption(tripAssistance);
+aliceUltimateContract.addOption(juridicalProtection);
+aliceUltimateContract.addBeneficiary(spouse, 50);
+aliceUltimateContract.addBeneficiary(child1, 25);
+aliceUltimateContract.addBeneficiary(child2, 20);
+
+bobUltimateContract.addAccident(bobWaterAccident);
+bobUltimateContract.addPayment(bobPayment1);
+bobUltimateContract.addOption(familyProtection);
+
+ultimateAlice.addUltimateContract(aliceUltimateContract);
+ultimateBob.addUltimateContract(bobUltimateContract);
+
+const aliceFireReimbursement =
+  aliceUltimateContract.createAccidentReimbursement(aliceFireAccident.id, 8000);
+console.log(
+  `Created reimbursement for accident ${aliceFireAccident.id}: €${aliceFireReimbursement.totalClaimAmount}`
+);
+
+const reimbursement1 = new Reimbursement(
+  1,
+  aliceFireAccident.id,
+  3000,
+  new Date("2025-10-05"),
+  ReimbursementMethod.BANK_TRANSFER,
+  ReimbursementStatus.PENDING,
+  true,
+  "First partial reimbursement for fire damage"
+);
+
+aliceFireReimbursement.addReimbursement(reimbursement1);
+reimbursement1.process();
+console.log(
+  `Reimbursement 1 processed: €${reimbursement1.amount} via ${reimbursement1.method}`
+);
+
+const reimbursement2 = new Reimbursement(
+  2,
+  aliceFireAccident.id,
+  5000,
+  new Date("2025-10-15"),
+  ReimbursementMethod.CARD,
+  ReimbursementStatus.PENDING,
+  true,
+  "Final reimbursement for fire damage"
+);
+
+aliceFireReimbursement.addReimbursement(reimbursement2);
+reimbursement2.process();
+console.log(
+  `Reimbursement 2 processed: €${reimbursement2.amount} via ${reimbursement2.method}`
+);
+
+console.log(`  - Total claim: €${aliceFireReimbursement.totalClaimAmount}`);
+console.log(
+  `  - Total reimbursed: €${aliceFireReimbursement.getTotalReimbursed()}`
+);
+console.log(`  - Remaining: €${aliceFireReimbursement.getRemainingAmount()}`);
+console.log(
+  `  - Fully reimbursed: ${aliceFireReimbursement.isFullyReimbursed()}`
+);
+console.log(
+  `  - Number of payments: ${aliceFireReimbursement.getReimbursements().length}`
+);
+
+try {
+  const excessReimbursement = new Reimbursement(
+    3,
+    aliceFireAccident.id,
+    1000,
+    new Date(),
+    ReimbursementMethod.CASH
+  );
+  aliceFireReimbursement.addReimbursement(excessReimbursement);
+} catch (error) {
+  console.log(`Error (expected): ${error.message}`);
+}
+
+const audit = new Audit(
+  1,
+  new Date("2025-10-01"),
+  new Date("2025-10-31"),
+  "Comprehensive audit of contracts and payments for Q4 2025",
+  "Auditor Marie Leclerc"
+);
+
+const contracts = [aliceUltimateContract, bobUltimateContract];
+const detectedAnomalies = AuditService.detectContractAnomalies(contracts);
+
+console.log(`Auto-detection found ${detectedAnomalies.length} anomalies`);
+detectedAnomalies.forEach((anomaly) => {
+  audit.addAnomaly(
+    anomaly.type,
+    anomaly.entityId,
+    anomaly.description,
+    anomaly.severity
+  );
+});
+
+const manualAnomaly1 = audit.addAnomaly(
+  AnomalyType.PAYMENT,
+  alicePayment2.id,
+  "Payment failure requires investigation - possible fraud",
+  AnomalySeverity.HIGH
+);
+
+const manualAnomaly2 = audit.addAnomaly(
+  AnomalyType.REIMBURSEMENT,
+  reimbursement1.id,
+  "Reimbursement amount seems high for claimed damage",
+  AnomalySeverity.MEDIUM
+);
+
+console.log(`\nAudit ${audit.id} summary:`);
+console.log(
+  `  - Period: ${audit.startDate.toISOString().slice(0, 10)} to ${audit.endDate
+    .toISOString()
+    .slice(0, 10)}`
+);
+console.log(`  - Auditor: ${audit.auditorName}`);
+console.log(`  - Total anomalies: ${audit.getAnomalies().length}`);
+
+const statusCount = audit.getAnomalyCountByStatus();
+console.log(`  - Detected: ${statusCount.detected}`);
+console.log(`  - Investigating: ${statusCount.investigating}`);
+console.log(`  - Resolved: ${statusCount.resolved}`);
+console.log(`  - Completion rate: ${audit.getCompletionRate()}%`);
+
+manualAnomaly1.investigate();
+manualAnomaly2.investigate();
+manualAnomaly2.resolve();
+
+console.log(`\nAfter investigation:`);
+const updatedStatusCount = audit.getAnomalyCountByStatus();
+console.log(`  - Detected: ${updatedStatusCount.detected}`);
+console.log(`  - Investigating: ${updatedStatusCount.investigating}`);
+console.log(`  - Resolved: ${updatedStatusCount.resolved}`);
+console.log(`  - Completion rate: ${audit.getCompletionRate()}%`);
+
+aliceUltimateContract.addAudit(audit);
+
+const assurOne = new InsuranceCompany(
+  1,
+  "assure One Ltd",
+  "paris",
+  "AA-",
+  "contact@assurOne.com"
+);
+
+const assurTwo = new InsuranceCompany(
+  2,
+  "assure two Group",
+  "Versailles",
+  "AA",
+  "info@assurtwo.com"
+);
+
+const assurThree = new InsuranceCompany(
+  3,
+  "assure Three Group",
+  "London",
+  "A+",
+  "question@three.com"
+);
+
+[assurOne, assurTwo, assurThree].forEach((company) => {
+  console.log(
+    `${company.name} (${company.country}) - Rating: ${
+      company.rating
+    } - Risk Level: ${company.getRiskLevel()}`
+  );
+});
+
+const assurOneContract = new ReinsuranceContract(
+  1,
+  assurOne,
+  new Date("2025-01-01"),
+  new Date("2025-12-31"),
+  40, // 40% du risque
+  50000
+);
+
+const munichReContract = new ReinsuranceContract(
+  2,
+  assurTwo,
+  new Date("2025-01-01"),
+  new Date("2025-12-31"),
+  35,
+  40000
+);
+
+const lloydsContract = new ReinsuranceContract(
+  3,
+  assurThree,
+  new Date("2025-06-01"),
+  new Date("2026-05-31"),
+  20,
+  25000
+);
+
+[assurOneContract, munichReContract, lloydsContract].forEach((contract) => {
+  console.log(
+    `${contract.reinsurer.name}: ${contract.riskPercentage}% coverage, max €${contract.maxCoverageAmount}`
+  );
+});
+
+const aliceCoverage = new ReinsuranceCoverage(aliceUltimateContract.id);
+
+try {
+  aliceCoverage.addReinsurance(assurOneContract);
+  aliceCoverage.addReinsurance(munichReContract);
+  aliceCoverage.addReinsurance(lloydsContract);
+
+  console.log(
+    `  - Total reinsurance coverage: ${aliceCoverage.getTotalCoveragePercentage()}%`
+  );
+  console.log(
+    `  - Self retained: ${aliceCoverage.getSelfRetainedPercentage()}%`
+  );
+
+  const validation = aliceCoverage.validateCoverage();
+  console.log(`  - Coverage valid: ${validation.isValid}`);
+  if (validation.issues.length > 0) {
+    console.log(`  - Issues: ${validation.issues.join(", ")}`);
+  }
+} catch (error) {
+  console.log(`Error setting up reinsurance: ${error.message}`);
+}
+
+aliceUltimateContract.setReinsuranceCoverage(aliceCoverage);
+
+const testClaims = [5000, 15000, 30000, 60000];
+
+testClaims.forEach((claimAmount) => {
+  console.log(`\nClaim amount: €${claimAmount}`);
+  const distribution =
+    aliceUltimateContract.calculateReinsuranceDistribution(claimAmount);
+
+  if (distribution) {
+    let totalDistributed = 0;
+    distribution.forEach((share, key) => {
+      console.log(
+        `  - ${share.company}: €${share.amount} (${share.percentage.toFixed(
+          1
+        )}%)`
+      );
+      totalDistributed += share.amount;
+    });
+    console.log(
+      `  Total distributed: €${totalDistributed} (${(
+        (totalDistributed / claimAmount) *
+        100
+      ).toFixed(1)}%)`
+    );
+  }
+});
+
+const bobDistribution =
+  bobUltimateContract.calculateReinsuranceDistribution(10000);
+console.log(
+  `\nBob's distribution (no reinsurance): ${
+    bobDistribution
+      ? "Has coverage"
+      : "No reinsurance coverage - full self retention"
+  }`
+);
+
+console.log(
+  `  - Total contracts: ${ultimateAlice.getUltimateContracts().length}`
+);
+console.log(
+  `  - Total reimbursements: €${ultimateAlice.getTotalReimbursements()}`
+);
+console.log(
+  `  - Active reinsurance contracts: ${
+    ultimateAlice.getActiveReinsuranceContracts().length
+  }`
+);
+console.log(
+  `  - Unresolved anomalies: ${
+    ultimateAlice.getAllUnresolvedAnomalies().length
+  }`
+);
+
+const riskOverview = ultimateAlice.getReinsuranceCoverageOverview();
+console.log(
+  `  - Average reinsurance coverage: ${riskOverview.totalCoverage.toFixed(1)}%`
+);
+console.log(
+  `  - Average self retained: ${riskOverview.selfRetained.toFixed(1)}%`
+);
+
+riskOverview.riskDistribution.forEach((percentage, company) => {
+  console.log(`  - ${company}: ${percentage}% of total risk`);
+});
+
+console.log(
+  `  - Total contracts: ${ultimateBob.getUltimateContracts().length}`
+);
+console.log(
+  `  - Total reimbursements: €${ultimateBob.getTotalReimbursements()}`
+);
+console.log(
+  `  - Active reinsurance contracts: ${
+    ultimateBob.getActiveReinsuranceContracts().length
+  }`
+);
+console.log(
+  `  - Unresolved anomalies: ${ultimateBob.getAllUnresolvedAnomalies().length}`
+);
+
+const bySeverity = {
+  critical: allAnomalies.filter((a) => a.severity === AnomalySeverity.CRITICAL)
+    .length,
+  high: allAnomalies.filter((a) => a.severity === AnomalySeverity.HIGH).length,
+  medium: allAnomalies.filter((a) => a.severity === AnomalySeverity.MEDIUM)
+    .length,
+  low: allAnomalies.filter((a) => a.severity === AnomalySeverity.LOW).length,
+};
+
+console.log(`  - Critical: ${bySeverity.critical}`);
+console.log(`  - High: ${bySeverity.high}`);
+console.log(`  - Medium: ${bySeverity.medium}`);
+console.log(`  - Low: ${bySeverity.low}`);

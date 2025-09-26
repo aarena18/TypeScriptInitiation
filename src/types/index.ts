@@ -77,3 +77,43 @@ export enum LawyerSpecialty {
   COMMERCIAL_LAW = "commercial_law",
   CRIMINAL_LAW = "criminal_law",
 }
+
+// Enums pour la Partie 5 - Remboursements et Audits
+export enum ReimbursementMethod {
+  BANK_TRANSFER = "bank_transfer",
+  CASH = "cash",
+  CARD = "card",
+}
+
+export enum ReimbursementStatus {
+  PENDING = "pending",
+  PROCESSED = "processed",
+  FAILED = "failed",
+}
+
+export enum AnomalyStatus {
+  DETECTED = "detected",
+  INVESTIGATING = "investigating",
+  RESOLVED = "resolved",
+}
+
+export enum AnomalyType {
+  CONTRACT = "contract",
+  PAYMENT = "payment",
+  ACCIDENT = "accident",
+  REIMBURSEMENT = "reimbursement",
+}
+
+export enum AnomalySeverity {
+  LOW = "low",
+  MEDIUM = "medium",
+  HIGH = "high",
+  CRITICAL = "critical",
+}
+
+// Enums pour la Partie 6 - Réassurance
+export enum ReinsuranceStatus {
+  ACTIVE = "active",
+  EXPIRED = "expired",
+  SUSPENDED = "suspended",
+}
