@@ -1,29 +1,27 @@
-import { 
-  ContractStatus, 
-  ClientType, 
-  AccidentType, 
-  PaymentMethod, 
+import {
+  ContractStatus,
+  ClientType,
+  AccidentType,
+  PaymentMethod,
   OptionType,
   EventAction,
-  EntityType
-} from '../types/index.js';
-import { ContactInfo, Contract } from '../models/contract.js';
-import { Client } from '../models/client.js';
-import { Accident, Expert } from '../models/accident.js';
-import { Payment } from '../models/payment.js';
-import { 
-  ContractOption, 
-  FullContract, 
-  EnhancedClient, 
-  EventLogger 
-} from '../models/extended.js';
-import { assignExpertToAccident } from '../utils/assignment.js';
+  EntityType,
+} from "../types/index.js";
+import { ContactInfo, Contract } from "../models/contract.js";
+import { Client } from "../models/client.js";
+import { Accident, Expert } from "../models/accident.js";
+import { Payment } from "../models/payment.js";
+import {
+  ContractOption,
+  FullContract,
+  EnhancedClient,
+  EventLogger,
+} from "../models/extended.js";
+import { assignExpertToAccident } from "../utils/assignment.js";
 
 // ---- Tests Partie 3 ----
 
 export function runPartie3Tests(): void {
-  console.log('\n=== TESTS PARTIE 3: Options et Événements ===');
-
   const eventLogger = new EventLogger();
 
   const aliceContact = new ContactInfo("alice@example.com", "0601020304");
@@ -32,36 +30,34 @@ export function runPartie3Tests(): void {
   const bob = new Client(102, bobContact, ClientType.STANDARD);
   const aliceContract1 = new Contract(1001, 500, ContractStatus.ACTIVE);
   const bobContract = new Contract(1003, 300, ContractStatus.ACTIVE);
-  
+
   alice.addContract(aliceContract1);
   bob.addContract(bobContract);
 
-  // Create available options
   const tripAssistance = new ContractOption(
     1,
     OptionType.TRIP_ASSISTANCE,
-    "Assistance Voyage",
-    "Assistance 24h/24 en cas de panne ou d'accident en voyage",
+    "Trip Assistance",
+    "24h/24 Assistance in case of accident while traveling",
     25
   );
 
   const juridicalProtection = new ContractOption(
     2,
     OptionType.JURIDICAL_PROTECTION,
-    "Protection Juridique",
-    "Assistance juridique et prise en charge des frais de procédure",
+    "Legal protection",
+    "Legal Assistance taken care of",
     15
   );
 
   const familyProtection = new ContractOption(
     3,
     OptionType.FAMILY_PROTECTION,
-    "Protection Famille",
-    "Extension de couverture pour tous les membres de la famille",
+    "Family Protection",
+    "Protection Extension for the family",
     35
   );
 
-  console.log("\\n=== Available Contract Options ===");
   console.log(`- ${tripAssistance.name}: €${tripAssistance.monthlyCost}/month`);
   console.log(
     `- ${juridicalProtection.name}: €${juridicalProtection.monthlyCost}/month`
@@ -70,11 +66,9 @@ export function runPartie3Tests(): void {
     `- ${familyProtection.name}: €${familyProtection.monthlyCost}/month`
   );
 
-  // Convert to enhanced clients and full contracts
   const enhancedAlice = new EnhancedClient(alice.id, alice.contact, alice.type);
   const enhancedBob = new EnhancedClient(bob.id, bob.contact, bob.type);
 
-  // Create full contracts from existing data
   const aliceFullContract = new FullContract(
     aliceContract1.id,
     aliceContract1.basePrice,
@@ -89,10 +83,9 @@ export function runPartie3Tests(): void {
     bobContract.status
   );
 
-  // Create accidents and payments (réutiliser la logique des parties précédentes)
   const fireExpert = new Expert(1, "Jean Dupont", AccidentType.FIRE);
   const expertsList = [fireExpert];
-  
+
   const aliceFireAccident = new Accident(
     3001,
     aliceContract1.id,
@@ -100,9 +93,12 @@ export function runPartie3Tests(): void {
     AccidentType.FIRE,
     "Kitchen fire at Alice's home - burnt pancackes"
   );
-  
-  const assignedFireExpert = assignExpertToAccident(aliceFireAccident, expertsList);
-  
+
+  const assignedFireExpert = assignExpertToAccident(
+    aliceFireAccident,
+    expertsList
+  );
+
   const alicePayment1 = new Payment(
     4001,
     aliceContract1.id,
@@ -110,7 +106,7 @@ export function runPartie3Tests(): void {
     PaymentMethod.CARD,
     new Date("2025-09-01")
   );
-  
+
   const alicePayment2 = new Payment(
     4002,
     aliceContract1.id,
@@ -118,20 +114,17 @@ export function runPartie3Tests(): void {
     PaymentMethod.BANK_TRANSFER,
     new Date("2025-10-01")
   );
-  
+
   alicePayment1.complete();
   alicePayment2.fail();
 
-  // Add existing accidents and payments
   aliceFullContract.addAccident(aliceFireAccident);
   aliceFullContract.addPayment(alicePayment1);
   aliceFullContract.addPayment(alicePayment2);
 
-  // Add contracts to enhanced clients
   enhancedAlice.addFullContract(aliceFullContract);
   enhancedBob.addFullContract(bobFullContract);
 
-  console.log("\\n=== Final Contract Pricing ===");
   console.log(
     "Alice base premium:",
     aliceFullContract.calculateFinalPrice(),
@@ -142,14 +135,17 @@ export function runPartie3Tests(): void {
     aliceFullContract.calculateFinalPriceWithOptions(),
     "EUR"
   );
-  console.log("Bob base premium:", bobFullContract.calculateFinalPrice(), "EUR");
+  console.log(
+    "Bob base premium:",
+    bobFullContract.calculateFinalPrice(),
+    "EUR"
+  );
   console.log(
     "Bob total with options:",
     bobFullContract.calculateFinalPriceWithOptions(),
     "EUR"
   );
 
-  console.log("\\n=== Quick Listing System ===");
   console.log(
     "Alice active contracts:",
     enhancedAlice.getActiveContractsSummary()
@@ -170,7 +166,10 @@ export function runPartie3Tests(): void {
   );
 
   console.log("Bob active contracts:", enhancedBob.getActiveContractsSummary());
-  console.log("Bob ongoing accidents:", enhancedBob.getOngoingAccidents().length);
+  console.log(
+    "Bob ongoing accidents:",
+    enhancedBob.getOngoingAccidents().length
+  );
   console.log(
     "Bob payment history:",
     enhancedBob.getPaymentHistory().length,
@@ -182,7 +181,6 @@ export function runPartie3Tests(): void {
     "EUR"
   );
 
-  // Log contract creation events
   eventLogger.logEvent(
     EventAction.CONTRACT_CREATED,
     EntityType.CONTRACT,
@@ -199,7 +197,6 @@ export function runPartie3Tests(): void {
     enhancedBob.id
   );
 
-  // Alice adds options to her contract (VIP gets multiple options)
   aliceFullContract.addOption(tripAssistance);
   console.log("Added", tripAssistance.name, "to Alice's contract");
 
@@ -225,7 +222,6 @@ export function runPartie3Tests(): void {
     enhancedAlice.id
   );
 
-  // Bob adds one option
   bobFullContract.addOption(familyProtection);
   console.log("Added", familyProtection.name, "to Bob's contract");
   console.log(
@@ -241,7 +237,6 @@ export function runPartie3Tests(): void {
     enhancedBob.id
   );
 
-  // Log existing accidents
   eventLogger.logEvent(
     EventAction.ACCIDENT_REPORTED,
     EntityType.ACCIDENT,
@@ -260,7 +255,6 @@ export function runPartie3Tests(): void {
     );
   }
 
-  // Log payments
   eventLogger.logEvent(
     EventAction.PAYMENT_SUCCESSFUL,
     EntityType.PAYMENT,
@@ -277,8 +271,6 @@ export function runPartie3Tests(): void {
     enhancedAlice.id
   );
 
-  console.log("\\n=== Event Logging System ===");
-  console.log("Recent system events:");
   eventLogger.getRecentEvents(5).forEach((event) => {
     console.log(
       `[${event.date.toISOString().slice(0, 10)}] ${event.action}: ${
@@ -287,7 +279,6 @@ export function runPartie3Tests(): void {
     );
   });
 
-  console.log("\\nAlice's complete event history:");
   eventLogger.getEventsByClient(enhancedAlice.id).forEach((event) => {
     console.log(`  - ${event.action}: ${event.description}`);
   });

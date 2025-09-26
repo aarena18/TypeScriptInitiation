@@ -16,8 +16,7 @@ export class Beneficiary {
     }
 }
 export class ContractBeneficiary {
-    constructor(beneficiary, sharePercentage, // Part du contrat en pourcentage
-    contractId) {
+    constructor(beneficiary, sharePercentage, contractId) {
         this.beneficiary = beneficiary;
         this.sharePercentage = sharePercentage;
         this.contractId = contractId;

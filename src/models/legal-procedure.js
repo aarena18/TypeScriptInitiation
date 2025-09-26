@@ -1,7 +1,6 @@
 import { LegalProcedureStatus } from '../types/index.js';
 export class LegalProcedure {
-    constructor(id, openingDate, status, accidentIds, // Peut être lié à plusieurs accidents
-    description, assignedLawyerId) {
+    constructor(id, openingDate, status, accidentIds, description, assignedLawyerId) {
         this.id = id;
         this.openingDate = openingDate;
         this.status = status;
